@@ -11,7 +11,9 @@ print(o.base_aa_seq)
 print(o.base_nt_seq)
 
 # Generate a new change vector
-o.change_aa_vector[4] = 1
+o.change_aa_vector[4] = True
+o.change_aa_vector[5] = True
+o.num_changes = 2
 
 # create new amino acid sequences
 o.generate_aa_sequences()

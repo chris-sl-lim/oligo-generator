@@ -10,12 +10,40 @@ class oligo_generator:
         self.base_nt_seq = base_nt_seq
         self.num_changes = num_changes
 
-
-
     def generate_aa_sequences(self):
 
-        # create the array of new amino acid sequences
-        self.generated_aa_seq = ogu.generate_aa_sequences(self.base_aa_seq, self.change_aa_vector)
+        # Create the first array of new amino acid sequences
+        self.generated_aa_seq, self.generated_aa_num_changes = ogu.generate_aa_sequences(self.base_aa_seq, self.change_aa_vector, [False]*len(self.base_aa_seq))
+
+        # If we require more than 1 change
+        if self.num_changes > 1:
+
+            # Loop through how many changes we require
+            for change_no in range(2, self.num_changes+1):
+
+                # Loop through 
+                for idx, seq in enumerate(self.generated_aa_seq):
+
+                    # Only generate new sequences using existing generated sequences as a base, if it has undergone 1 change less than required
+                    if sum(self.generated_aa_num_changes[idx]) == (change_no - 1):
+
+                        # Invert generated_aa_num_changes list
+                        change_mask = [not elem for elem in self.generated_aa_num_changes[idx]]
+
+                        # Compute a new change vector by ANDing the change_mask and the change_aa_vector (to remove the amino acid(s) that have already changed)
+                        aa_change_vec = [a and b for a, b in zip(change_mask, self.change_aa_vector)]
+
+                        # Generate new sequences
+                        new_aa_seq, new_aa_num_changes = ogu.generate_aa_sequences(self.base_aa_seq, aa_change_vec, self.generated_aa_num_changes[idx])
+
+                        # Get unique values by using the set() operator
+                        unique_idx         = [new_aa_seq.index(x) for x in set(new_aa_seq)]
+                        unique_seq         = [new_aa_seq[idx] for idx in unique_idx]
+                        unique_num_changes = [new_aa_num_changes[idx] for idx in unique_idx]
+
+                        # Append unique values to internal properties
+                        self.generated_aa_seq         = self.generated_aa_seq + unique_seq
+                        self.generated_aa_num_changes = self.generated_aa_num_changes + unique_num_changes
 
     @property
     def base_nt_seq(self):
@@ -31,9 +59,9 @@ class oligo_generator:
         self._base_aa_seq = ogu.nt2aa( self._base_nt_seq )
 
         # Set the change indices
-        self._change_nt_vector = [0] * len(self.base_nt_seq)
-        self._change_aa_vector = [0] * len(self.base_aa_seq)
-        self._fullyfree_vector = [0] * len(self.base_aa_seq)
+        self._change_nt_vector = [False] * len(self.base_nt_seq)
+        self._change_aa_vector = [False] * len(self.base_aa_seq)
+        self._fullyfree_vector = [False] * len(self.base_aa_seq)
 
     @property
     def base_aa_seq(self):

@@ -26,7 +26,7 @@ def nt2aa( seq ):
 
     return aa_seq
 
-def generate_aa_sequences(seq, aa_change_vec):
+def generate_aa_sequences(seq, aa_change_vec, aa_base_num_changes):
     # Get the codon table for 'h_sapiens_9606"
     ct = pct.get_codons_table("h_sapiens_9606")
 
@@ -35,6 +35,7 @@ def generate_aa_sequences(seq, aa_change_vec):
 
     # Create a new list for the generated sequences
     generated_aa = list()
+    generated_aa_num_changes = list()
 
     # Remove certain amino acids
     available_aa.remove('*')
@@ -51,11 +52,15 @@ def generate_aa_sequences(seq, aa_change_vec):
             # Get strings before and after
             str_before = seq[0:idx]
             str_after  = seq[idx+1:]
+            # Add to the aa_num_changes vector
+            aa_num_changes = aa_base_num_changes[:]
+            aa_num_changes[idx] = True
             # Loop and create
             for aa in aa_to_use:
                 generated_aa.append(str_before + aa + str_after)
+                generated_aa_num_changes.append(aa_num_changes)
 
-    return generated_aa
+    return generated_aa, generated_aa_num_changes
 
 
 
