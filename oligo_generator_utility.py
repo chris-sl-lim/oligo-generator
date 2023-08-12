@@ -27,6 +27,10 @@ def nt2aa( seq ):
     return aa_seq
 
 def generate_aa_sequences(seq, aa_change_vec, aa_base_num_changes):
+    # seq: base amino acid sequence
+    # aa_change_vec: boolean the same size as the sequence which tells us what amino acids we can change
+    # aa_base_num_changes: boolean the same size as the sequence which tells us what amino acids have already changed
+
     # Get the codon table for 'h_sapiens_9606"
     ct = pct.get_codons_table("h_sapiens_9606")
 
@@ -52,7 +56,7 @@ def generate_aa_sequences(seq, aa_change_vec, aa_base_num_changes):
             # Get strings before and after
             str_before = seq[0:idx]
             str_after  = seq[idx+1:]
-            # Add to the aa_num_changes vector
+            # Add to the aa_num_changes vector by creating a copy of the original
             aa_num_changes = aa_base_num_changes[:]
             aa_num_changes[idx] = True
             # Loop and create
