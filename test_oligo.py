@@ -12,10 +12,10 @@ print(o.base_aa_seq)
 print(o.base_nt_seq)
 
 # Generate a new change vector
-o.set_aa_pos(4, True)
-o.set_aa_pos(5, True)
-o.set_nt_pos(2, True)
-o.set_nt_pos(5, True)
+o.set_aa_pos(4, False)
+o.set_aa_pos(5, False)
+o.set_nt_pos(2, False)
+o.set_nt_pos(5, False)
 o.num_changes = 2
 
 # create new amino acid sequences

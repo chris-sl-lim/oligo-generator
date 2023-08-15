@@ -80,9 +80,9 @@ class oligo_generator:
         self._base_aa_seq = ogu.nt2aa( self._base_nt_seq )
 
         # Set the change indices
-        self._change_nt_vector = [False] * len(self.base_nt_seq)
-        self._change_aa_vector = [False] * len(self.base_aa_seq)
-        self._fullyfree_vector = [False] * len(self.base_aa_seq)
+        self._change_nt_vector = [True] * len(self.base_nt_seq)
+        self._change_aa_vector = [True] * len(self.base_aa_seq)
+        self._fullyfree_vector = [True] * len(self.base_aa_seq)
 
     @property
     def base_aa_seq(self):

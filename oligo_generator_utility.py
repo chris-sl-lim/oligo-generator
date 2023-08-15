@@ -67,7 +67,8 @@ def generate_aa_sequences(seq, nt_seq, aa_change_vec, nt_change_vec, aa_base_num
                 aa_to_use = get_compatible_aa(nt_seq_chunk, nt_change_chunk)
 
             # Remove the amino acid that is already there
-            aa_to_use.remove(seq[idx])
+            if seq[idx] in aa_to_use:
+                aa_to_use.remove(seq[idx])
 
             # Get strings before and after
             str_before = seq[0:idx]
