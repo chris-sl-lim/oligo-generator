@@ -31,8 +31,8 @@ class oligo_generator:
                         change_mask = [not elem for elem in self.generated_aa_num_changes[idx]]
 
                         # Compute a new change vector by ANDing the change_mask and the change_aa_vector (to remove the amino acid(s) that have already changed)
-                        new_aa_change_vec = [a and b for a, b in zip(change_mask, self.change_aa_vector)]
-                        new_nt_change_vec, _ = ogu.sync_aa_change_to_nt_change(new_aa_change_vec, self.change_nt_vector)
+                        new_aa_change_vec = [a and b for a, b in zip(change_mask, self.change_aa_vector[:])]
+                        new_nt_change_vec, _ = ogu.sync_aa_change_to_nt_change(new_aa_change_vec, self.change_nt_vector[:])
 
                         # Generate new sequences
                         new_aa_seq, new_aa_num_changes = ogu.generate_aa_sequences(self.base_aa_seq, self.base_nt_seq, new_aa_change_vec, new_nt_change_vec, self.generated_aa_num_changes[idx])
@@ -45,6 +45,13 @@ class oligo_generator:
                         # Append unique values to internal properties
                         self.generated_aa_seq         = self.generated_aa_seq + unique_seq
                         self.generated_aa_num_changes = self.generated_aa_num_changes + unique_num_changes
+
+        return
+    
+    def generate_nt_sequences(self):
+
+        self.generated_nt_seq = ogu.generate_nt_sequences(self.generated_aa_seq, self.generated_aa_num_changes, self.base_nt_seq, self.change_nt_vector, 
+                                                          self.fullyfree_vector, self.restriction_sites)
 
         return
 
@@ -118,4 +125,12 @@ class oligo_generator:
     def fullyfree_vector(self, value):
         # Assign value
         self._fullyfree_vector = value
+
+    @property
+    def restriction_sites(self):
+        return self._restriction_sites
+    
+    @restriction_sites.setter
+    def restriction_sites(self, value):
+        self._restriction_sites = value
         
