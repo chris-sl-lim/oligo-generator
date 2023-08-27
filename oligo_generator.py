@@ -1,6 +1,7 @@
 # import statements
 import python_codon_tables as pct
 import oligo_generator_utility as ogu
+import csv
 
 class oligo_generator:
 
@@ -9,6 +10,10 @@ class oligo_generator:
         # Assign properties
         self.base_nt_seq = base_nt_seq
         self.num_changes = num_changes
+
+        # Create properties
+        self.generated_aa_seq = []
+        self.generated_nt_seq = []
 
     def generate_aa_sequences(self):
 
@@ -50,8 +55,10 @@ class oligo_generator:
     
     def generate_nt_sequences(self):
 
-        self.generated_nt_seq = ogu.generate_nt_sequences(self.generated_aa_seq, self.generated_aa_num_changes, self.base_nt_seq, self.change_nt_vector, 
-                                                          self.fullyfree_vector, self.restriction_sites)
+        # Generate the nucleotide sequences
+        self.generated_nt_seq, self.generated_nt_seq_change_attempts = ogu.generate_nt_sequences(
+            self.generated_aa_seq, self.generated_aa_num_changes, self.base_nt_seq, 
+            self.change_nt_vector, self.fullyfree_vector, self.restriction_sites)
 
         return
 
@@ -70,6 +77,34 @@ class oligo_generator:
         nt_change_vec = self.change_nt_vector[:]
         nt_change_vec[idx] = value
         self.change_nt_vector = nt_change_vec[:]
+
+        return
+    
+    def export_aa_sequences(self, fn):
+
+        # Only export if the list is populated
+        if len(self.generated_aa_seq) > 0:
+
+            # Open file
+            with open(fn, 'w', newline='') as file:
+
+                # Write to csv
+                writer = csv.writer(file)
+                writer.writerow(self.generated_aa_seq)
+
+        return
+    
+    def export_nt_sequences(self, fn):
+
+        # Only export if the list is populated
+        if len(self.generated_nt_seq) > 0:
+
+            # Open file
+            with open(fn, 'w', newline='') as file:
+
+                # Write to csv
+                writer = csv.writer(file)
+                writer.writerow(self.generated_nt_seq)
 
         return
 
