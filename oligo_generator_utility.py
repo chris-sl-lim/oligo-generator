@@ -293,6 +293,9 @@ def generate_nt_sequences(aa_sequences, aa_num_changes, base_nt_seq, nt_change_v
                     if res_site in nt_seq:
                         valid_seq = False
 
+            # Print message
+            print('Generated nucleotide sequence ', idx+1, ' of ', len(aa_sequences))
+
         # Exited the while loop so store the sequence
         generated_nt.append(nt_seq)
         generated_change_attempts.append(aa_num_change_attempts)

@@ -89,8 +89,9 @@ class oligo_generator:
             with open(fn, 'w', newline='') as file:
 
                 # Write to csv
-                writer = csv.writer(file)
-                writer.writerow(self.generated_aa_seq)
+                # writer = csv.writer(file)
+                # writer.writerow(self.generated_aa_seq)
+                file.write('\n'.join(self.generated_aa_seq))
 
         return
     
@@ -103,8 +104,9 @@ class oligo_generator:
             with open(fn, 'w', newline='') as file:
 
                 # Write to csv
-                writer = csv.writer(file)
-                writer.writerow(self.generated_nt_seq)
+                # writer = csv.writer(file)
+                # writer.writerow(self.generated_nt_seq)
+                file.write('\n'.join(self.generated_nt_seq))
 
         return
 
