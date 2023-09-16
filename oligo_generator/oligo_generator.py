@@ -1,7 +1,6 @@
 # import statements
 import python_codon_tables as pct
-import oligo_generator_utility as ogu
-import numpy as np
+import oligo_generator.oligo_generator_utility as ogu
 import csv
 import itertools
 

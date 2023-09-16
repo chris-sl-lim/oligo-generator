@@ -1,5 +1,5 @@
-import oligo_generator as og
-import oligo_generator_utility as ogu
+import oligo_generator.oligo_generator as og
+import oligo_generator.oligo_generator_utility as ogu
 import csv
 
 # define base sequence
