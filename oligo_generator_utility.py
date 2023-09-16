@@ -1,9 +1,12 @@
 import python_codon_tables as pct
 import fnmatch
 
+from itertools import combinations
 from copy import deepcopy
 
 def nt2aa( seq ):
+# Converts nucleotide sequence to an amino acid sequence
+
     # Get the codon table for 'h_sapiens_9606"
     ct = pct.get_codons_table("h_sapiens_9606")
 
@@ -29,7 +32,38 @@ def nt2aa( seq ):
 
     return aa_seq
 
-def generate_aa_sequences(seq, nt_seq, aa_change_vec, nt_change_vec, aa_base_num_changes):
+def aa2nt( seq ):
+# Converts amino acid sequences to nucleotide sequences using highest likelihood nucleotide sequence
+
+    # Get the codon table for 'h_sapiens_9606"
+    ct = pct.get_codons_table("h_sapiens_9606")
+
+    # Create blank nt_seq
+    nt_seq = ''
+
+    # Return the nt seq
+    for aa in seq:
+
+        # Get the dictionary for that aa
+        nt_dict = ct[aa]
+        # Sort by most likely
+        nt_dict = dict(sorted(nt_dict.items(), key = lambda x:x[1], reverse=True))
+        # Append most likely
+        nt_seq = nt_seq + list(nt_dict.items())[0][0]
+
+    return nt_seq
+
+def all_combinations(items_list):
+
+    result = []
+
+    for i in range(1, len(items_list) + 1):
+        for combo in combinations(items_list, i):
+            result.append(combo)
+
+    return result
+
+def generate_aa_sequences(aa_seq, change_combos):
     # seq: base amino acid sequence
     # nt_seq: base nucleotide sequence
     # aa_change_vec: boolean the same size as the sequence which tells us what amino acids we can change
@@ -42,53 +76,86 @@ def generate_aa_sequences(seq, nt_seq, aa_change_vec, nt_change_vec, aa_base_num
     # Get the list of available amino acids
     available_aa = list(ct.keys())
 
+    # Remove the amino acids we will never want
+    if '*' in available_aa:
+        available_aa.remove('*')
+    if 'C' in available_aa:
+        available_aa.remove('C')
+    if 'M' in available_aa:
+        available_aa.remove('M')
+
     # Create a new list for the generated sequences
     generated_aa = list()
-    generated_aa_num_changes = list()
+    generated_aa_changes = list()
 
-    # Loop through the elements we can change
-    for idx, tf in enumerate(aa_change_vec):
+    # For each combo
+    for combo in change_combos:
 
-        # Need to generate a new set
-        if tf == True:
-            # Get corresponding nt sequence
-            nt_change_chunk = nt_change_vec[(idx*3):(idx*3)+3]
+        # Create a list for the static chunks (e.g. bits of the sequence that do not change)
+        static_chunks = list()
+        chunk = ''
 
-            # What amino acids can we use? If all the nt_chunk is True, then we are fully free.
-            # If not, then we need to get a sub of available amino acids
-            if nt_change_chunk == [True]*3:
+        # Create a list for an amino acid library (e.g. what amino acids can be used at what position)
+        aa_lib = list()
+
+        # Build up a list of the static chunks
+        for idx, tf in enumerate(combo):
+
+            if tf == False:
+                chunk = chunk + aa_seq[idx]
+            elif tf == True:
+                # Append the chunk to the library and reset
+                static_chunks.append(chunk)
+                chunk = ''
+                # Take stock of what position we are at and remove the amino acid that is already there
                 aa_to_use = available_aa
-                
+                if aa_seq[idx] in aa_to_use:
+                    aa_to_use.remove(aa_seq[idx])
+                aa_lib.append(aa_to_use)
+
+        # Add the last chunk after the loop has finished
+        static_chunks.append(chunk)
+
+        # Create a list of roots
+        prev_seq_roots = list()
+
+        # Now create the sequences
+        for idx, chunk in enumerate(static_chunks):
+            
+            # Append the latest chunk to all the generated sequence roots so far
+            if idx == 0:
+                prev_seq_roots.append(chunk)
             else:
-                nt_seq_chunk = nt_seq[(idx*3):(idx*3)+3]
-                aa_to_use = get_compatible_aa(nt_seq_chunk, nt_change_chunk)
+                for idx1, seq_root in enumerate(prev_seq_roots):
+                    prev_seq_roots[idx1] = seq_root + chunk                    
+                
+            # If we're not at the last segment, then append the amino acids as well
+            if idx < (len(static_chunks)-1):
 
-            # Remove the amino acid that is already there
-            if seq[idx] in aa_to_use:
-                aa_to_use.remove(seq[idx])
+                # Get the aa_lib
+                aa_to_use = aa_lib[idx]
 
-            # Remove certain amino acids
-            if '*' in aa_to_use:
-                aa_to_use.remove('*')
-            if 'C' in aa_to_use:
-                aa_to_use.remove('C')
-            if 'M' in aa_to_use:
-                aa_to_use.remove('M')
+                # Create a new_seq_roots list
+                new_seq_roots = list()
 
-            # Get strings before and after
-            str_before = seq[0:idx]
-            str_after  = seq[idx+1:]
+                # Append
+                for seq_root in prev_seq_roots:
 
-            # Add to the aa_num_changes vector by creating a copy of the original
-            aa_num_changes = aa_base_num_changes[:]
-            aa_num_changes[idx] = True
+                    # Generate a new sequence root for each amino acid
+                    for aa in aa_to_use:
+                        new_seq_roots.append(seq_root + aa)
 
-            # Loop and create
-            for aa in aa_to_use:
-                generated_aa.append(str_before + aa + str_after)
-                generated_aa_num_changes.append(aa_num_changes)
+                # Replace prev_seq_roots
+                prev_seq_roots = new_seq_roots
 
-    return generated_aa, generated_aa_num_changes
+            else:
+
+                # Now we're at the end - these are our sequences
+                generated_aa = generated_aa + prev_seq_roots
+                for ii in range(0, len(prev_seq_roots)):
+                    generated_aa_changes.append(list(combo))
+
+    return generated_aa, generated_aa_changes
 
 def sync_nt_change_to_aa_change(nt_change_vec, aa_change_vec):
 

@@ -1,7 +1,9 @@
 # import statements
 import python_codon_tables as pct
 import oligo_generator_utility as ogu
+import numpy as np
 import csv
+import itertools
 
 class oligo_generator:
 
@@ -14,42 +16,46 @@ class oligo_generator:
         # Create properties
         self.generated_aa_seq = []
         self.generated_nt_seq = []
+        self.generated_aa_changes = []
 
     def generate_aa_sequences(self):
 
-        # Create the first array of new amino acid sequences
-        self.generated_aa_seq, self.generated_aa_num_changes = ogu.generate_aa_sequences(self.base_aa_seq, self.base_nt_seq, self.change_aa_vector, self.change_nt_vector, [False]*len(self.base_aa_seq))
+        # Loop through how many changes we need
+        for change in range(1, self.num_changes+1):
 
-        # If we require more than 1 change
-        if self.num_changes > 1:
+            # Print
+            print('Generating sequences for ', change, ' number of changes.')
 
-            # Loop through how many changes we require
-            for change_no in range(2, self.num_changes+1):
+            # Get all combinations
+            num_constant  = len(self.base_aa_seq) - change
+            change_list   = ([True] * change) + ([False] * num_constant)
+            change_combos = list(set(itertools.permutations(change_list)))
 
-                # Loop through 
-                for idx, seq in enumerate(self.generated_aa_seq):
+            # Create a list to store indices to remove
+            idxToRemove = []
 
-                    # Only generate new sequences using existing generated sequences as a base, if it has undergone 1 change less than required
-                    if sum(self.generated_aa_num_changes[idx]) == (change_no - 1):
+            # Combine with the change_aa_vector which says which amino acid we need to change
+            for idx, combo in enumerate(change_combos):
+                # Create the change mask that says what elements of the change_vec needs to change
+                change_mask = [a and not(b) for a,b in zip(list(combo),self.change_aa_vector)]
+                # AND with the change_mask to apply changes
+                combo = [not(a) and b for a,b in zip(change_mask, list(combo))]
+                # Sum the amount of True values in the list
+                num_true = sum(combo)
+                # If the number of true values is less than the change number, mark for deletion
+                if num_true < change:
+                    idxToRemove.append(idx)
 
-                        # Invert generated_aa_num_changes list
-                        change_mask = [not elem for elem in self.generated_aa_num_changes[idx]]
+            # Remove the ones that we need to remove
+            for idx in reversed(idxToRemove):
+                del change_combos[idx]
 
-                        # Compute a new change vector by ANDing the change_mask and the change_aa_vector (to remove the amino acid(s) that have already changed)
-                        new_aa_change_vec = [a and b for a, b in zip(change_mask, self.change_aa_vector[:])]
-                        new_nt_change_vec, _ = ogu.sync_aa_change_to_nt_change(new_aa_change_vec, self.change_nt_vector[:])
+            # Now generate the amino acid sequences          
+            generated_aa_seq, generated_aa_changes = ogu.generate_aa_sequences(self.base_aa_seq, change_combos)
 
-                        # Generate new sequences
-                        new_aa_seq, new_aa_num_changes = ogu.generate_aa_sequences(self.base_aa_seq, self.base_nt_seq, new_aa_change_vec, new_nt_change_vec, self.generated_aa_num_changes[idx])
-
-                        # Get unique values by using the set() operator
-                        unique_idx         = [new_aa_seq.index(x) for x in set(new_aa_seq)]
-                        unique_seq         = [new_aa_seq[idx] for idx in unique_idx]
-                        unique_num_changes = [new_aa_num_changes[idx] for idx in unique_idx]
-
-                        # Append unique values to internal properties
-                        self.generated_aa_seq         = self.generated_aa_seq + unique_seq
-                        self.generated_aa_num_changes = self.generated_aa_num_changes + unique_num_changes
+            # Append to property
+            self.generated_aa_seq = self.generated_aa_seq + generated_aa_seq
+            self.generated_aa_changes = self.generated_aa_changes + generated_aa_changes
 
         return
     
