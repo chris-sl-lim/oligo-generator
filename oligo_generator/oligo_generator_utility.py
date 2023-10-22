@@ -250,7 +250,7 @@ def filter_codon_list(nt_seq, nt_change, nt_list):
     # Convert the sequence to wildcards
     nt_search = ''
     for idx, change in enumerate(nt_change):
-        if change == False:
+        if change == True:
             nt_search = nt_search + '?'
         else:
             nt_search = nt_search + nt_seq[idx]
@@ -366,6 +366,11 @@ def generate_nt_sequences(aa_sequences, aa_num_changes, base_nt_seq, nt_change_v
         # Exited the while loop so store the sequence
         generated_nt.append(nt_seq)
         generated_change_attempts.append(aa_num_change_attempts)
+
+    # Only return the unique nt sequences
+    uniqueidx = [generated_nt.index(x) for x in set(generated_nt)]
+    generated_nt = set(generated_nt)
+    generated_change_attempts = [generated_change_attempts[i] for i in uniqueidx]
 
     # Gone through all the amino acid sequences
     return generated_nt, generated_change_attempts

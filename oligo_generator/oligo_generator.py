@@ -16,6 +16,7 @@ class oligo_generator:
         self.generated_aa_seq = []
         self.generated_nt_seq = []
         self.generated_aa_changes = []
+        self.restriction_sites = []
 
     def generate_aa_sequences(self):
 
@@ -62,7 +63,7 @@ class oligo_generator:
 
         # Generate the nucleotide sequences
         self.generated_nt_seq, self.generated_nt_seq_change_attempts = ogu.generate_nt_sequences(
-            self.generated_aa_seq, self.generated_aa_num_changes, self.base_nt_seq, 
+            self.generated_aa_seq, self.generated_aa_changes, self.base_nt_seq, 
             self.change_nt_vector, self.fullyfree_vector, self.restriction_sites)
 
         return

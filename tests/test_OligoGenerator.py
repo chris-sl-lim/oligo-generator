@@ -146,6 +146,15 @@ def test_ThreeChangeFourCodon():
     # Get number of changes
     assert len(o.generated_aa_seq) == (comb(4,1) * num_ct) + (comb(4,2) * num_ct**2) + (comb(4,3) * num_ct**3)
 
+def test_NucleotideToAminoAcid():
+
+    # Define base seq and create oligo generator object
+    base_seq = 'GCGTGAGTTCACGAAGAT'
+    o = og.oligo_generator( base_seq )
+
+    # Assert that the result is correct
+    assert o.base_aa_seq == "A*VHED"
+
 
     
 
