@@ -63,7 +63,7 @@ class oligo_generator:
                 generated_aa_changes
 
         return
-    
+
     def generate_nt_sequences(self):
 
         # Generate the nucleotide sequences

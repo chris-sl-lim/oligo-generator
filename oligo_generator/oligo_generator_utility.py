@@ -34,6 +34,7 @@ def nt2aa(seq):
 
     return aa_seq
 
+
 def aa2nt(seq):
     """
     Converts amino acid sequences to nucleotide sequences using highest

@@ -139,7 +139,7 @@ def test_TwoChangeThreeCodon():
     assert len(o.generated_aa_seq) == (comb(3, 1) * num_ct) + \
         (comb(3, 2) * num_ct**2)
 
-    
+
 def test_ThreeChangeFourCodon():
 
     # Get the codon list and how many 
@@ -171,10 +171,3 @@ def test_NucleotideToAminoAcid():
 
     # Assert that the result is correct
     assert o.base_aa_seq == "A*VHED"
-
-
-    
-
-    
-
-    
