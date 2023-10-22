@@ -1,13 +1,11 @@
 import oligo_generator.oligo_generator as og
-import csv
 
-from math import comb
 
 def test_FixNucleotidePosition():
-    
+
     # Define base seq and create oligo generator object
     base_seq = 'AGAAGCTGCATT'
-    o = og.oligo_generator( base_seq )
+    o = og.oligo_generator(base_seq)
 
     # Get the amino acid sequence and fix position 3
     ntSeq = o.base_nt_seq
