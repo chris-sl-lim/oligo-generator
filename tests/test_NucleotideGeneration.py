@@ -1,4 +1,5 @@
 import oligo_generator.oligo_generator as og
+import python_codon_tables as pct
 
 
 def test_FixNucleotidePosition():
@@ -28,3 +29,31 @@ def test_FixNucleotidePosition():
         if seq != '':
             assert seq[4] == ntSeq[4]
             assert seq[7] == ntSeq[7]
+
+
+def test_ThreeChangeFourCodonNucleotideGeneration():
+
+    # Get the codon list and how many 
+    ct = pct.get_codons_table("h_sapiens_9606")
+    num_ct = len(ct)
+
+    # Subtract the codons that we remove (*, C, M and the original codon) to
+    # get the num changes we expect
+    num_ct = num_ct - 4
+
+    # Define base seq and create oligo generator object
+    base_seq = 'AGAAGAAGAAGA'
+    o = og.oligo_generator(base_seq)
+
+    # Set number of changes
+    o.num_changes = 3
+    o.generate_aa_sequences()
+
+    # Generate nucleotide sequences
+    o.generate_nt_sequences()
+
+    # Assert that the number of nucleotide sequences is equal to amino acid sequences
+    assert len(o.generated_nt_seq) == len(o.generated_aa_seq)
+
+    # Assert that all nucleotide sequences are unique
+    assert len(set(o.generated_nt_seq)) == len(o.generated_nt_seq)
