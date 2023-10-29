@@ -1,12 +1,11 @@
-import oligo_generator as og
-from oligo_generator import oligo_generator_utility as ogu
+import oligo_generator.models.generator as og
 import csv
 
 # define base sequence
 base_seq = 'AGAAGCTGCATTGATACCATCCCCAAAAGCAGATGCACCGCCTTCCAGTGCGCGCACAGCATGAAATACCGGCTGAGCTTCTGTAGAAAGACCTGCGGCACCTGT'
 
 # create OligoGenerator object
-o = og.generator( base_seq )
+o = og.oligo_generator( base_seq )
 
 # print
 print(o.base_aa_seq)

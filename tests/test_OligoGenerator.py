@@ -1,4 +1,4 @@
-import oligo_generator.oligo_generator as og
+import oligo_generator.models.generator as og
 import python_codon_tables as pct
 from math import comb
 

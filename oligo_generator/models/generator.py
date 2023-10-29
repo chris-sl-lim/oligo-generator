@@ -1,4 +1,4 @@
-import oligo_generator.oligo_generator_utility as ogu
+import oligo_generator.utilities.helper_functions as ogu
 import itertools
 
 
