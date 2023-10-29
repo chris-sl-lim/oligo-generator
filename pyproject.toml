@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "oligo-generator"
+version = "0.1.0"
+description = "A tool to generate a oligo library deriving from an nucleotide sequences with changes."
+authors = ["Chris Lim"]
+license = "N/A"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.3"
+python-codon-tables = "^0.1.12"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
