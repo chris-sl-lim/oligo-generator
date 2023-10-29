@@ -1,0 +1,90 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><Maxion Oligo Generator></title>
+</head>
+<body>
+    <h1>Maxion Oligo Generator</h1>
+    
+    <form id="baseNucleotideSequence">
+        <label for="inputSequence">Enter text:</label>
+        <input type="text" id="inputSequence" name="inputSequence" required>
+        <br>
+        <label for="numChanges">Number of changes:</label>
+        <input type="text" id="numChanges" name="numChanges" required>
+        <br>
+        <button type="button" onclick="generateSequences()">Generate Library</button>
+    </form>
+
+    <p>Generated library:</p>
+    <p id="result">Sequences will appear here.</p>
+
+    <script>
+        function generateSequences() {
+            // Get the data out of the form
+            var baseNucleotideSequence = document.getElementById("inputSequence").value;
+            var numChanges = document.getElementById("numChanges").value;
+            // Create a new request through AJAX
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/generateSequences", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    parseResult(xhr.responseText)
+                }
+            };
+            xhr.send(JSON.stringify({"inputSequence": baseNucleotideSequence, "numChanges": numChanges}));
+        }
+        
+        function parseResult(jsonResponse) {
+            // Parse JSON
+            var resultsObject = JSON.parse(jsonResponse);
+            var sequences = resultsObject.sequences;
+            var changes = resultsObject.changes;
+            // Split by "," and add line break
+            // htmlDisplay = "<p>" + sequences.join("</p><p>") + "</p>";
+            // Display text
+            // document.getElementById("result").innerHTML = htmlDisplay;
+            displayResultsInTable(sequences, changes)
+
+        }
+
+        // Function to create HTML table
+        function displayResultsInTable(sequences, changes) {
+
+            // Create the table
+            var table = document.createElement("table");
+            var headerRow = table.insertRow(0);
+
+            // Create table header
+            var headerCell = headerRow.insertCell(0);
+            headerCell.innerHTML = "<b>Sequences</b>";
+            headerCell.style.textAlign = "center"
+            var headerCell = headerRow.insertCell(1);
+            headerCell.innerHTML = "<b>Change Attempts</b>";
+            headerCell.style.textAlign = "center"
+            
+
+            // Create table rows
+            for (var i = 0; i < sequences.length; i++) {
+                var row = table.insertRow(i + 1);
+                var cell = row.insertCell(0);
+                cell.innerHTML = sequences[i];
+                cell.style.textAlign = "center"
+                var cell = row.insertCell(1);
+                cell.innerHTML = String(changes[i]);
+                cell.style.textAlign = "center"
+            }
+
+            // Display in HTML
+            var arrayDisplayDiv = document.getElementById("result");
+            arrayDisplayDiv.innerHTML = "";
+            arrayDisplayDiv.appendChild(table);
+        }
+    </script>
+
+</body>
+</html>
