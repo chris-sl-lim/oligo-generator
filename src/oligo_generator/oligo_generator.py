@@ -1,4 +1,3 @@
-# import statements
 import oligo_generator.oligo_generator_utility as ogu
 import itertools
 
