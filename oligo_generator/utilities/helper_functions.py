@@ -407,11 +407,11 @@ def generate_nt_sequences(aa_sequences, aa_num_changes, base_nt_seq,
         generated_nt.append(nt_seq)
         generated_change_attempts.append(aa_num_change_attempts)
 
-    # Only return the unique nt sequences
-    uniqueidx = [generated_nt.index(x) for x in set(generated_nt)]
-    generated_nt = set(generated_nt)
-    generated_change_attempts = [generated_change_attempts[i]
-                                 for i in uniqueidx]
+    # Remove empties from list
+    nonemptyidx = [generated_nt.index(x) for x in generated_nt if x != '']
+    generated_nt = [generated_nt[i] for i in nonemptyidx]
+    generated_change_attempts = [generated_change_attempts[i] for i in nonemptyidx]
+
 
     # Gone through all the amino acid sequences
     return generated_nt, generated_change_attempts
