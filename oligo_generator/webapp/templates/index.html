@@ -17,9 +17,10 @@
         <input type="text" id="numChanges" name="numChanges" required>
         <br>
         <button type="button" onclick="generateSequences()">Generate Library</button>
+        <button type="button" onclick="exportSequences()">Export Library</button>
     </form>
 
-    <p>Generated library:</p>
+    <p id="result_header">Generated library:</p>
     <p id="result">Sequences will appear here.</p>
 
     <script>
@@ -42,18 +43,20 @@
         function parseResult(jsonResponse) {
             // Parse JSON
             var resultsObject = JSON.parse(jsonResponse);
-            var sequences = resultsObject.sequences;
+            var base_aa_sequence = resultsObject.base_amino_acid_sequence;
+            var nt_sequences = resultsObject.nucleotide_sequences;
+            var aa_sequences = resultsObject.amino_acid_sequences;
             var changes = resultsObject.changes;
             // Split by "," and add line break
-            // htmlDisplay = "<p>" + sequences.join("</p><p>") + "</p>";
+            document.getElementById("result_header").innerHTML = "Generated " + nt_sequences.length + " sequences from base sequence " + base_aa_sequence;
             // Display text
             // document.getElementById("result").innerHTML = htmlDisplay;
-            displayResultsInTable(sequences, changes)
+            displayResultsInTable(nt_sequences, aa_sequences, changes)
 
         }
 
         // Function to create HTML table
-        function displayResultsInTable(sequences, changes) {
+        function displayResultsInTable(nt_sequences, aa_sequences, changes) {
 
             // Create the table
             var table = document.createElement("table");
@@ -61,20 +64,26 @@
 
             // Create table header
             var headerCell = headerRow.insertCell(0);
-            headerCell.innerHTML = "<b>Sequences</b>";
+            headerCell.innerHTML = "<b>Nucleotide Sequences</b>";
             headerCell.style.textAlign = "center"
             var headerCell = headerRow.insertCell(1);
+            headerCell.innerHTML = "<b>Amino Acid Sequences</b>";
+            headerCell.style.textAlign = "center"
+            var headerCell = headerRow.insertCell(2);
             headerCell.innerHTML = "<b>Change Attempts</b>";
             headerCell.style.textAlign = "center"
             
 
             // Create table rows
-            for (var i = 0; i < sequences.length; i++) {
+            for (var i = 0; i < nt_sequences.length; i++) {
                 var row = table.insertRow(i + 1);
                 var cell = row.insertCell(0);
-                cell.innerHTML = sequences[i];
+                cell.innerHTML = nt_sequences[i];
                 cell.style.textAlign = "center"
                 var cell = row.insertCell(1);
+                cell.innerHTML = aa_sequences[i];
+                cell.style.textAlign = "center"
+                var cell = row.insertCell(2);
                 cell.innerHTML = String(changes[i]);
                 cell.style.textAlign = "center"
             }
@@ -83,6 +92,44 @@
             var arrayDisplayDiv = document.getElementById("result");
             arrayDisplayDiv.innerHTML = "";
             arrayDisplayDiv.appendChild(table);
+        }
+
+        function buildTableData() {
+            const elements = [...document.querySelectorAll('td')];
+            return elements.map(x => {
+            return {content : x.innerHTML}
+            });
+        }
+
+        // Function to export library
+        function exportSequences() {
+            // Get the HTML table
+            var tableBody = document.getElementById("result").getElementsByTagName('tbody')[0];
+
+            // Initialize the CSV string
+            var csv = [];
+
+            // Iterate through table rows and cells
+            var numRows = tableBody.rows.length;
+            for (var i = 1, numRows; row = tableBody.rows[i]; i++) {
+                csv.push(row.cells[0].innerText);
+            }
+
+            // Create a CSV blob
+            var csvContent = csv.join('\n');
+            var blob = new Blob([csvContent], { type: 'text/csv' });
+
+            // Create a download link
+            var link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = 'exported_data.csv';
+
+            // Append the link to the document and trigger the click event
+            document.body.appendChild(link);
+            link.click();
+
+            // Remove the link from the document
+            document.body.removeChild(link);
         }
     </script>
 

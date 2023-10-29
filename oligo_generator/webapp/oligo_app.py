@@ -42,7 +42,10 @@ def generate_sequences(base_sequence, num_changes):
     o.generate_nt_sequences()
 
     # Return the generated sequences
-    return {"sequences": list(o.generated_nt_seq), "changes": o.generated_nt_seq_change_attempts}
+    return {"base_amino_acid_sequence": o.base_aa_seq,
+            "nucleotide_sequences": list(o.generated_nt_seq), 
+            "amino_acid_sequences": list(o.generated_aa_seq), 
+            "changes": o.generated_nt_seq_change_attempts}
     
 
 if __name__ == '__main__':
