@@ -1,33 +1,76 @@
 <!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><Maxion Oligo Generator></title>
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Maxion Oligo Generator</title>
+        <!--<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">-->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    </head>
 <body>
-    <h1>Maxion Oligo Generator</h1>
-    
-    <form id="baseNucleotideSequence">
-        <label for="inputSequence">Enter text:</label>
-        <input type="text" id="inputSequence" name="inputSequence" required>
-        <br>
-        <label for="numChanges">Number of changes:</label>
-        <input type="text" id="numChanges" name="numChanges" required>
-        <br>
-        <button type="button" onclick="generateSequences()">Generate Library</button>
-        <button type="button" onclick="exportSequences()">Export Library</button>
-    </form>
+    <div class="container mt-5">
+        <h1 class="mb-4">Maxion Oligo Generator</h1>
 
-    <p id="result_header">Generated library:</p>
-    <p id="result">Sequences will appear here.</p>
+        <!-- Text Box -->
+        <div class="form-group">
+            <label for="exampleFormControlInput1">Input Nucleotide Sequence</label>
+            <input type="text" class="form-control" id="inputSequence" placeholder="AGAAGCTGCATT">
+        </div>
+        <div class="form-group">
+            <label for="exampleFormControlSelect1">Number of Changes</label>
+            <select class="form-control" id="numChanges">
+              <option>1</option>
+              <option>2</option>
+              <option>3</option>
+              <option>4</option>
+              <option>5</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="exampleFormControlInput1">Nucleotide Positions to Fix</label>
+            <input type="text" class="form-control" id="ntFixedPositions" placeholder="1,3,5">
+        </div>
+        <div class="form-group">
+            <label for="exampleFormControlInput1">Amino Acid Positions To Fix</label>
+            <input type="text" class="form-control" id="aaFixedPositions" placeholder="2,4,6">
+        </div>
+        <div class="form-group">
+            <label for="exampleFormControlInput1">Translated Amino Acid Sequence</label>
+            <input type="text" class="form-control" id="inputAminoAcidSequence" placeholder="" readonly>
+        </div>
+        <div class="form-group">
+            <label for="exampleFormControlInput1">Nucleotide Sequence with Fixed Positions in <span style="font-weight: bold;">bold</span></label>
+            <p id="fixedNucleotideSequence"></p>
+            <!--<input type="text" class="form-control" id="fixedNucleotideSequence" placeholder="" readonly>-->
+        </div>
+
+        <div class = "text-center row">
+            <div class = "col-md-6">
+                <button id="checkInputsBtn" class="btn btn-primary col" onclick="checkInputs()">Check Inputs</button>
+            </div>
+            <div class = "col-md-6">
+                <button id="generateSequencesBtn" class="btn btn-primary col" onclick="generateSequences()">Generate Sequences</button>
+            </div>
+            <div class = "col-md-6">
+                <button id="exportSequencesBtn" class="btn btn-primary col" onclick="exportSequences()">Export Sequences</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-5">
+        <p id="result-title" class="font-weight-bold">Generated library:</p>
+        <div id="result-container">Sequences will appear here.</div>
+    </div>
 
     <script>
         function generateSequences() {
             // Get the data out of the form
             var baseNucleotideSequence = document.getElementById("inputSequence").value;
             var numChanges = document.getElementById("numChanges").value;
+            var ntFixedPositions = document.getElementById("ntFixedPositions").value;
+            var aaFixedPositions = document.getElementById("aaFixedPositions").value;
+            
             // Create a new request through AJAX
             var xhr = new XMLHttpRequest();
             xhr.open("POST", "/generateSequences", true);
@@ -37,7 +80,57 @@
                     parseResult(xhr.responseText)
                 }
             };
-            xhr.send(JSON.stringify({"inputSequence": baseNucleotideSequence, "numChanges": numChanges}));
+            xhr.send(JSON.stringify({"inputSequence": baseNucleotideSequence, 
+                "numChanges": numChanges, 
+                "ntFixedPositions": ntFixedPositions,
+                "aaFixedPositions": aaFixedPositions
+            }));
+        }
+
+        function checkInputs() {
+            // Get the data out of the form
+            var baseNucleotideSequence = document.getElementById("inputSequence").value;
+            var numChanges = document.getElementById("numChanges").value;
+            var ntFixedPositions = document.getElementById("ntFixedPositions").value;
+            var aaFixedPositions = document.getElementById("aaFixedPositions").value;
+            
+            // Create a new request through AJAX
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/checkInputs", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    parseInputCheckResult(xhr.responseText)
+                }
+            };
+            xhr.send(JSON.stringify({"inputSequence": baseNucleotideSequence, 
+                "numChanges": numChanges, 
+                "ntFixedPositions": ntFixedPositions,
+                "aaFixedPositions": aaFixedPositions
+            }));
+        }
+
+        function parseInputCheckResult(jsonResponse) {
+            // Parse JSON
+            var resultsObject = JSON.parse(jsonResponse);
+            var base_aa_sequence = resultsObject.base_amino_acid_sequence;
+            var fixed_positions = resultsObject.fixed_positions
+
+            // Update translated amino acid sequence
+            document.getElementById("inputAminoAcidSequence").value = resultsObject.base_amino_acid_sequence;
+
+            // Update fixed nucleotide sequence
+            var nt_sequence = document.getElementById("inputSequence").value;
+            var formatted_nt_sequence = ""
+            for (var i = 0; i < nt_sequence.length; i++) {
+                var currentChar = nt_sequence.charAt(i);
+                if (fixed_positions[i] == false) {
+                    formatted_nt_sequence += '<span style="font-weight: bold;">' + currentChar + '</span>';
+                } else {
+                    formatted_nt_sequence += currentChar;
+                }
+            }   
+            document.getElementById("fixedNucleotideSequence").innerHTML = formatted_nt_sequence;
         }
         
         function parseResult(jsonResponse) {
@@ -47,10 +140,14 @@
             var nt_sequences = resultsObject.nucleotide_sequences;
             var aa_sequences = resultsObject.amino_acid_sequences;
             var changes = resultsObject.changes;
-            // Split by "," and add line break
-            document.getElementById("result_header").innerHTML = "Generated " + nt_sequences.length + " sequences from base sequence " + base_aa_sequence;
-            // Display text
-            // document.getElementById("result").innerHTML = htmlDisplay;
+
+            // Update translated amino acid sequence
+            document.getElementById("inputAminoAcidSequence").value = resultsObject.base_amino_acid_sequence;
+
+            // Parse results table title
+            document.getElementById("result-title").innerHTML = "Generated " + nt_sequences.length + " sequences from base sequence " + base_aa_sequence;
+            
+            // Display table
             displayResultsInTable(nt_sequences, aa_sequences, changes)
 
         }
@@ -58,40 +155,57 @@
         // Function to create HTML table
         function displayResultsInTable(nt_sequences, aa_sequences, changes) {
 
-            // Create the table
+            // Get where we are going to put the table
+            var tableContainer = document.getElementById("result-container");
+            tableContainer.innerHTML = ''
+
+            // Create table element
             var table = document.createElement("table");
-            var headerRow = table.insertRow(0);
+            table.classList.add("table", "table-bordered", "table-striped");
 
             // Create table header
-            var headerCell = headerRow.insertCell(0);
-            headerCell.innerHTML = "<b>Nucleotide Sequences</b>";
-            headerCell.style.textAlign = "center"
-            var headerCell = headerRow.insertCell(1);
-            headerCell.innerHTML = "<b>Amino Acid Sequences</b>";
-            headerCell.style.textAlign = "center"
-            var headerCell = headerRow.insertCell(2);
-            headerCell.innerHTML = "<b>Change Attempts</b>";
-            headerCell.style.textAlign = "center"
-            
+            var thead = document.createElement("thead");
+            var headerRow = document.createElement("tr");
+            var headers = ["Nucleotide Sequences", "Amino Acid Sequences", "Change Attempts"];
+            headers.forEach(function(headerText) {
+                var th = document.createElement("th");
+                th.textContent = headerText;
+                headerRow.appendChild(th);
+            });
+        
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
 
-            // Create table rows
-            for (var i = 0; i < nt_sequences.length; i++) {
-                var row = table.insertRow(i + 1);
-                var cell = row.insertCell(0);
-                cell.innerHTML = nt_sequences[i];
-                cell.style.textAlign = "center"
-                var cell = row.insertCell(1);
-                cell.innerHTML = aa_sequences[i];
-                cell.style.textAlign = "center"
-                var cell = row.insertCell(2);
-                cell.innerHTML = String(changes[i]);
-                cell.style.textAlign = "center"
+             // Create table body
+            var tbody = document.createElement("tbody");
+
+            // Determine the maximum number of rows based on the length of the columns
+            var numRows = Math.max(nt_sequences.length, aa_sequences.length, changes.length);
+
+            for (var i = 0; i < numRows; i++) {
+              var row = document.createElement("tr");
+            
+              // Add cells to the row, using empty string if the array doesn't have a value at that index
+              var cell1 = document.createElement("td");
+              cell1.textContent = nt_sequences[i] || "";
+              row.appendChild(cell1);
+            
+              var cell2 = document.createElement("td");
+              cell2.textContent = aa_sequences[i] || "";
+              row.appendChild(cell2);
+            
+              var cell3 = document.createElement("td");
+              cell3.textContent = changes[i] || "";
+              row.appendChild(cell3);
+            
+              tbody.appendChild(row);
             }
 
-            // Display in HTML
-            var arrayDisplayDiv = document.getElementById("result");
-            arrayDisplayDiv.innerHTML = "";
-            arrayDisplayDiv.appendChild(table);
+            table.appendChild(tbody);
+
+            // Append the table to the container
+            tableContainer.appendChild(table);           
+
         }
 
         function buildTableData() {
@@ -104,7 +218,7 @@
         // Function to export library
         function exportSequences() {
             // Get the HTML table
-            var tableBody = document.getElementById("result").getElementsByTagName('tbody')[0];
+            var tableBody = document.getElementById("result-container").getElementsByTagName('tbody')[0];
 
             // Initialize the CSV string
             var csv = [];
