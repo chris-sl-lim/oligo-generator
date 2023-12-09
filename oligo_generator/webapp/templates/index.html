@@ -16,43 +16,80 @@
         <div class="form-group">
             <label for="exampleFormControlInput1">Input Nucleotide Sequence</label>
             <input type="text" class="form-control" id="inputSequence" placeholder="AGAAGCTGCATT">
+        </div>       
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="exampleFormControlSelect1">Number of Changes</label>
+                    <select class="form-control" id="numChanges">
+                      <option>1</option>
+                      <option>2</option>
+                      <option>3</option>
+                      <option>4</option>
+                      <option>5</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="exampleFormControlInput1">Amino Acid Code To Fix</label>
+                    <input type="text" class="form-control" id="aaFixedCodes" placeholder="C,I">
+                </div>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="exampleFormControlSelect1">Number of Changes</label>
-            <select class="form-control" id="numChanges">
-              <option>1</option>
-              <option>2</option>
-              <option>3</option>
-              <option>4</option>
-              <option>5</option>
-            </select>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="exampleFormControlInput1">Nucleotide Positions to Fix</label>
+                    <input type="text" class="form-control" id="ntFixedPositions" placeholder="1,3,5">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="exampleFormControlInput1">Amino Acid Positions To Fix</label>
+                    <input type="text" class="form-control" id="aaFixedPositions" placeholder="2,4,6">
+                </div>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="exampleFormControlInput1">Nucleotide Positions to Fix</label>
-            <input type="text" class="form-control" id="ntFixedPositions" placeholder="1,3,5">
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="exampleFormControlInput1">Restricted Nucleotide Sequences</label>
+                    <textarea class="form-control" id="ntRestrictedSequences" rows="4" placeholder="Enter text"></textarea>
+                    <button type="submit" class="btn btn-primary mt-2">Load from File</button>
+                    <button type="submit" class="btn btn-primary mt-2">Load Default Restriction Sites</button>                    
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="exampleFormControlInput1">Restricted Amino Acid Sequences</label>
+                    <textarea class="form-control" id="aaRestrictedSequences" rows="4" placeholder="Enter text"></textarea>
+                    <button type="submit" class="btn btn-primary mt-2">Load from File</button>
+                </div>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="exampleFormControlInput1">Amino Acid Positions To Fix</label>
-            <input type="text" class="form-control" id="aaFixedPositions" placeholder="2,4,6">
-        </div>
+
         <div class="form-group">
             <label for="exampleFormControlInput1">Translated Amino Acid Sequence</label>
             <input type="text" class="form-control" id="inputAminoAcidSequence" placeholder="" readonly>
         </div>
+
         <div class="form-group">
             <label for="exampleFormControlInput1">Nucleotide Sequence with Fixed Positions in <span style="font-weight: bold;">bold</span></label>
             <p id="fixedNucleotideSequence"></p>
-            <!--<input type="text" class="form-control" id="fixedNucleotideSequence" placeholder="" readonly>-->
         </div>
 
         <div class = "text-center row">
-            <div class = "col-md-6">
+            <div class = "col">
                 <button id="checkInputsBtn" class="btn btn-primary col" onclick="checkInputs()">Check Inputs</button>
             </div>
-            <div class = "col-md-6">
+            <div class = "col">
                 <button id="generateSequencesBtn" class="btn btn-primary col" onclick="generateSequences()">Generate Sequences</button>
             </div>
-            <div class = "col-md-6">
+            <div class = "col">
                 <button id="exportSequencesBtn" class="btn btn-primary col" onclick="exportSequences()">Export Sequences</button>
             </div>
         </div>
@@ -70,6 +107,9 @@
             var numChanges = document.getElementById("numChanges").value;
             var ntFixedPositions = document.getElementById("ntFixedPositions").value;
             var aaFixedPositions = document.getElementById("aaFixedPositions").value;
+            var aaFixedCodes = document.getElementById("aaFixedCodes").value;
+            var aaRestrictedSequences = document.getElementById("aaRestrictedSequences").value;
+            var ntRestrictedSequences = document.getElementById("ntRestrictedSequences").value;
             
             // Create a new request through AJAX
             var xhr = new XMLHttpRequest();
@@ -83,7 +123,10 @@
             xhr.send(JSON.stringify({"inputSequence": baseNucleotideSequence, 
                 "numChanges": numChanges, 
                 "ntFixedPositions": ntFixedPositions,
-                "aaFixedPositions": aaFixedPositions
+                "aaFixedPositions": aaFixedPositions,
+                "aaFixedCodes": aaFixedCodes,
+                "aaRestrictedSequences": aaRestrictedSequences,
+                "ntRestrictedSequences": ntRestrictedSequences
             }));
         }
 
@@ -93,6 +136,9 @@
             var numChanges = document.getElementById("numChanges").value;
             var ntFixedPositions = document.getElementById("ntFixedPositions").value;
             var aaFixedPositions = document.getElementById("aaFixedPositions").value;
+            var aaFixedCodes = document.getElementById("aaFixedCodes").value;
+            var aaRestrictedSequences = document.getElementById("aaRestrictedSequences").value;
+            var ntRestrictedSequences = document.getElementById("ntRestrictedSequences").value;
             
             // Create a new request through AJAX
             var xhr = new XMLHttpRequest();
@@ -106,7 +152,10 @@
             xhr.send(JSON.stringify({"inputSequence": baseNucleotideSequence, 
                 "numChanges": numChanges, 
                 "ntFixedPositions": ntFixedPositions,
-                "aaFixedPositions": aaFixedPositions
+                "aaFixedPositions": aaFixedPositions,
+                "aaFixedCodes": aaFixedCodes, 
+                "aaRestrictedSequences": aaRestrictedSequences,
+                "ntRestrictedSequences": ntRestrictedSequences
             }));
         }
 

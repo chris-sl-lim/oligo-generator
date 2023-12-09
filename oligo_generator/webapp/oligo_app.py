@@ -77,6 +77,9 @@ def prepare_oligo_generator(data):
     num_changes = data['numChanges']
     fixed_aa_positions = data['aaFixedPositions']
     fixed_nt_positions = data['ntFixedPositions']
+    fixed_aa_codes = data['aaFixedCodes']
+    restricted_aa_sequences = data['aaRestrictedSequences']
+    restricted_nt_sequences = data['ntRestrictedSequences']
 
     # Create the generator
     o = ogu.oligo_generator(base_nt_seq=base_sequence)
@@ -91,6 +94,16 @@ def prepare_oligo_generator(data):
     # Set fixed nucleotide positions
     for value in fixed_nt_positions:
         o.set_nt_pos(value, False)
+
+    # Set fixed amino acid codes
+    for value in fixed_aa_codes:
+        o.set_fixed_aa(value)
+
+    # Set restricted amino acid sequences
+    o.restricted_aa_sequences = restricted_aa_sequences
+
+    # Set restricted nucleotide sequences
+    o.restriction_sites = restricted_nt_sequences
 
     # Return oligo generator
     return o
@@ -124,16 +137,35 @@ def parse_json_input(data):
     # Convert NumChanges to an integer
     data['numChanges'] = int(data['numChanges'])
 
-    # Turn the aaFixedPosition and ntFixedPositions into a list
+    # Amino acid fixed positions (turn into integer list)
     if data['aaFixedPositions']:
         data['aaFixedPositions'] = [int(value) for value in data['aaFixedPositions'].split(',')]
     else:
         data['aaFixedPositions'] = []
 
+    # Nucleotide fixed positions (turn into integer list)
     if data['ntFixedPositions']:
         data['ntFixedPositions'] = [int(value) for value in data['ntFixedPositions'].split(',')]
     else:
         data['ntFixedPositions'] = []
+
+    # Amino acid fixed codes (turn into list)
+    if data['aaFixedCodes']:
+        data['aaFixedCodes'] = data['aaFixedCodes'].split(',')
+    else:
+        data['aaFixedCodes'] = []
+
+    # Parse amino acid restricted sequences
+    if data['aaRestrictedSequences']:
+        data['aaRestrictedSequences'] = data['aaRestrictedSequences'].split('\n')
+    else:
+        data['aaRestrictedSequences'] = []
+
+    # Parse nucleotide restricted sequences
+    if data['ntRestrictedSequences']:
+        data['ntRestrictedSequences'] = data['ntRestrictedSequences'].split('\n')
+    else:
+        data['ntRestrictedSequences'] = []        
 
     return data
     
