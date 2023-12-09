@@ -57,3 +57,46 @@ def test_ThreeChangeFourCodonNucleotideGeneration():
 
     # Assert that all nucleotide sequences are unique
     assert len(set(o.generated_nt_seq)) == len(o.generated_nt_seq)
+
+
+def test_FixedAminoAcid():
+
+    # Define base seq and create oligo generator object
+    base_seq = 'AGAAGCTGCATT'
+    o = og.oligo_generator(base_seq)
+
+    # Fix amino acid 'C'
+    o.set_fixed_aa('C')
+
+    # Set num changes
+    o.num_changes = 2
+
+    # Generate
+    o.generate_aa_sequences()
+    o.generate_nt_sequences()
+
+    # Assert that position 2 is always c
+    for value in o.generated_aa_seq:
+        assert(value[2] == 'C')
+
+
+def test_RestrictedAminoAcidSequence():
+
+    # Define a base sequence        
+    base_seq = 'AGAAGCTGCATT'
+    o = og.oligo_generator(base_seq)
+
+    # Set num changes
+    o.num_changes = 2
+
+    # Set restricted amino acid sequence
+    o.restricted_aa_sequences = ['RS']
+
+    # Generate
+    o.generate_aa_sequences()
+
+    # Assert that 'RS' does not appear in any of the sequences
+    for seq in o.generated_aa_seq:
+        assert('RS' not in seq)
+
+
