@@ -72,7 +72,7 @@ def all_combinations(items_list):
     return result
 
 
-def generate_aa_sequences(aa_seq, change_combos):
+def generate_aa_sequences(aa_seq, change_combos, restricted_aa_seq):
     """
     seq: base amino acid sequence
     nt_seq: base nucleotide sequence
@@ -173,6 +173,16 @@ def generate_aa_sequences(aa_seq, change_combos):
                 generated_aa = generated_aa + prev_seq_roots
                 for ii in range(0, len(prev_seq_roots)):
                     generated_aa_changes.append(list(combo))
+
+        # Now check for restricted amino acid sequences
+        idx_to_remove = []
+        for restricted_seq in restricted_aa_seq:
+            for idx, seq in enumerate(generated_aa):
+                if restricted_seq in seq:
+                    idx_to_remove.append(idx)
+
+        # Recreate list
+        generated_aa = [j for i, j in enumerate(generated_aa) if i not in idx_to_remove]
 
     return generated_aa, generated_aa_changes
 

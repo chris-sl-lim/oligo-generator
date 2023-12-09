@@ -54,7 +54,7 @@ class oligo_generator:
 
             # Now generate the amino acid sequences        
             generated_aa_seq, generated_aa_changes = \
-                ogu.generate_aa_sequences(self.base_aa_seq, change_combos)
+                ogu.generate_aa_sequences(self.base_aa_seq, change_combos, self.restricted_aa_sequences)
 
             # Append to property
             self.generated_aa_seq = self.generated_aa_seq + generated_aa_seq
@@ -74,6 +74,15 @@ class oligo_generator:
                 )
 
         return
+    
+
+    def set_fixed_aa(self, value):
+
+        # Loop through the sequence
+        for idx, aa in enumerate(self.base_aa_seq):
+            if aa == value:
+                self.set_aa_pos(idx, False)
+
 
     def set_aa_pos(self, idx, value):
 
@@ -83,6 +92,7 @@ class oligo_generator:
         self.change_aa_vector = aa_change_vec[:]
 
         return
+
 
     def set_nt_pos(self, idx, value):
 
@@ -185,3 +195,11 @@ class oligo_generator:
     @restriction_sites.setter
     def restriction_sites(self, value):
         self._restriction_sites = value
+
+    @property
+    def restricted_aa_sequences(self):
+        return self._restricted_aa_sequences
+
+    @restricted_aa_sequences.setter
+    def restricted_aa_sequences(self, value):
+        self._restricted_aa_sequences = value        
