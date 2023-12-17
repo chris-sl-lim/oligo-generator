@@ -1,1 +1,1 @@
-from oligo_generator.webapp import oligo_app
+from oligo_generator.webapp.oligo_app import app
