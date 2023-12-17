@@ -7,6 +7,8 @@
         <title>Maxion Oligo Generator</title>
         <!--<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">-->
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+        <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     </head>
 <body>
     <div class="container mt-5">
@@ -58,15 +60,105 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label for="exampleFormControlInput1">Restricted Nucleotide Sequences</label>
-                    <textarea class="form-control" id="ntRestrictedSequences" rows="4" placeholder="Enter text"></textarea>
+                    <!--<textarea class="form-control" id="ntRestrictedSequences" rows="4" placeholder="Enter text"></textarea>
                     <button type="submit" class="btn btn-primary mt-2">Load from File</button>
-                    <button type="submit" class="btn btn-primary mt-2">Load Default Restriction Sites</button>                    
+                    <button type="submit" class="btn btn-primary mt-2" onclick="loadDefaultRestrictionSites()">Load Default Restriction Sites</button>-->
+                    <div style="overflow-y: auto; max-height: 250px;">
+                        <table class="table table-condensed table-hover" id="restrictionsTable">
+                            <thead>
+                            <tr style="line-height: 1;">
+                                <th scope="col">Name</th>
+                                <th scope="col">Sequence</th>
+                                <th scope="col">Select</th>
+                            </tr>
+                            </thead>
+                            <tbody style="line-height: 1;">
+                            <tr>
+                                <th scope="row">BamH1</th>
+                                <td>GGATCC</td>
+                                <td><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Bbs1</th>
+                                <td>GAAGAC</td>
+                                <td><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Bsa1</th>
+                                <td>GGTCTC</td>
+                                <td><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">BspE1</th>
+                                <td>TCCGGA</td>
+                                <td><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">ClaI</th>
+                                <td>ATCGAT</td>
+                                <td><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">HindIII</th>
+                                <td>AAGCTT</td>
+                                <td><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">MfeI</th>
+                                <td>CAATTG</td>
+                                <td><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Nco1</th>
+                                <td>CCATGG</td>
+                                <td><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Nhe1</th>
+                                <td>GCTAGC</td>
+                                <td><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Not1</th>
+                                <td>GCGGCCGC</td>
+                                <td><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Pst1</th>
+                                <td>CTGCAG</td>
+                                <td><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Sap1</th>
+                                <td>GCTCTTC</td>
+                                <td><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Xho1</th>
+                                <td>CTCGAG</td>
+                                <td><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Bsa1_r</th>
+                                <td>GAGACC</td>
+                                <td><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Bbs1_r</th>
+                                <td>GTCTTC</td>
+                                <td><input type="checkbox"></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2" onclick="selectAll()">Select All</button>
+                    <button type="submit" class="btn btn-primary mt-2" onclick="removeAll()">Remove All</button>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
                     <label for="exampleFormControlInput1">Restricted Amino Acid Sequences</label>
-                    <textarea class="form-control" id="aaRestrictedSequences" rows="4" placeholder="Enter text"></textarea>
+                    <textarea class="form-control" id="aaRestrictedSequences" rows="10" style="height: 250px;" placeholder="Enter text"></textarea>
                     <button type="submit" class="btn btn-primary mt-2">Load from File</button>
                 </div>
             </div>
@@ -95,13 +187,63 @@
         </div>
     </div>
 
+    <div id="progress-bar-container" class="container mt-5">
+        <!--<div id="progress-bar" style="width: 0;"></div>-->
+        <div id="progress-bar" class="progress-bar" role="progressbar" aria-label="Basic example" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        <div id="progress-message" class="text-center"></div>
+    </div>
+
     <div class="container mt-5">
         <p id="result-title" class="font-weight-bold">Generated library:</p>
         <div id="result-container">Sequences will appear here.</div>
     </div>
 
-    <script>
+    <script>           
+
         function generateSequences() {
+            // Reset progress bar
+            $('#progress-bar').css('width', 0 + '%');
+            $('#progress-message').text('');
+
+            // Connect SocketIO
+            var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+            // Set Socket functionality
+            socket.on('connect', function() {
+                console.log('Connected to server');
+                // socket.emit('start_task');
+            });
+
+            // Set socket update function
+            socket.on('update_progress', function(data) {
+
+                // Update progress bar
+                var progressValue = data.progress;
+                var currentState = data.current_state;
+                var total = data.total;
+
+                // Get the progress bar element
+                var progressBar = document.getElementById("progress-bar");
+
+                // Set progress message
+                var progressMessage = document.getElementById("progress-message");
+                if (progressValue < 50) {
+                    progressMessage.innerHTML = 'Generating amino acid sequences with ' + currentState + ' changes.';
+                } else {
+                    progressMessage.innerHTML = 'Generated nucleotide sequence ' + currentState + ' of ' + total;
+                }                                
+
+                // Update the width and aria-valuenow attributes
+                progressBar.style.width = progressValue + "%";
+                progressBar.setAttribute("aria-valuenow", progressValue);
+                progressBar.innerHTML = Math.round(progressValue) + "%";
+
+                if (progressValue >= 100) {
+                    // Close the connection after the task is complete
+                    socket.disconnect();
+                }
+            });     
+
             // Get the data out of the form
             var baseNucleotideSequence = document.getElementById("inputSequence").value;
             var numChanges = document.getElementById("numChanges").value;
@@ -109,7 +251,10 @@
             var aaFixedPositions = document.getElementById("aaFixedPositions").value;
             var aaFixedCodes = document.getElementById("aaFixedCodes").value;
             var aaRestrictedSequences = document.getElementById("aaRestrictedSequences").value;
-            var ntRestrictedSequences = document.getElementById("ntRestrictedSequences").value;
+            // var ntRestrictedSequences = document.getElementById("ntRestrictedSequences").value;
+
+            // Return restriction sites
+            var ntRestrictedSequences = parseRestrictionSites();
             
             // Create a new request through AJAX
             var xhr = new XMLHttpRequest();
@@ -138,7 +283,10 @@
             var aaFixedPositions = document.getElementById("aaFixedPositions").value;
             var aaFixedCodes = document.getElementById("aaFixedCodes").value;
             var aaRestrictedSequences = document.getElementById("aaRestrictedSequences").value;
-            var ntRestrictedSequences = document.getElementById("ntRestrictedSequences").value;
+            // var ntRestrictedSequences = document.getElementById("ntRestrictedSequences").value;
+
+            // Return restriction sites
+            var ntRestrictedSequences = parseRestrictionSites();
             
             // Create a new request through AJAX
             var xhr = new XMLHttpRequest();
@@ -294,6 +442,40 @@
             // Remove the link from the document
             document.body.removeChild(link);
         }
+
+        // Function to select all and remove all nucleotide sites
+        function selectAll() {
+            var checkboxes = document.querySelectorAll('#restrictionsTable tbody input[type="checkbox"]');
+            checkboxes.forEach(function (checkbox) {
+                checkbox.checked = true;
+            });
+        }
+
+        function removeAll() {
+            var checkboxes = document.querySelectorAll('#restrictionsTable tbody input[type="checkbox"]');
+            checkboxes.forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+        }
+
+        // Function to parse the restriction sites check boxes
+        function parseRestrictionSites() {            
+            // Get the check boxes
+            var checkboxes = document.querySelectorAll('#restrictionsTable tbody input[type="checkbox"]');
+            var selectedItems = [];
+
+            // Loop through
+            checkboxes.forEach(function (checkbox, index) {
+                if (checkbox.checked) {
+                    var itemName = document.querySelectorAll('#restrictionsTable tbody td:nth-child(2)')[index].innerText;
+                    selectedItems.push(itemName);
+                }
+            });
+            
+            // Return
+            return selectedItems;
+        }
+
     </script>
 
 </body>

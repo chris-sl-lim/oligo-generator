@@ -1,14 +1,27 @@
 from flask import Flask, render_template, request, jsonify
-from threading import Thread
+from flask_socketio import SocketIO
 import oligo_generator.models.generator as ogu
 
 app = Flask(__name__)
+socketio = SocketIO(app)
 status = None
 
 @app.route('/')
 def home():
     return render_template('index.html')
 
+
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected')
+
+
+@socketio.on('start_task')
 @app.route('/generateSequences', methods=['POST'])
 def create_generated_sequences():
     global status
@@ -40,7 +53,6 @@ def create_generated_sequences():
 
 @app.route('/checkInputs', methods=['POST'])
 def check_inputs():
-    global status
     try:
         # Get the data from the web form
         data = request.get_json()
@@ -109,15 +121,17 @@ def prepare_oligo_generator(data):
     return o
     
 
-def generate_sequences(o):
+def generate_sequences(o):   
 
     # Create new amino acid sequences
     status = "Generating amino acid sequences"
-    o.generate_aa_sequences()
+    o.generate_aa_sequences(s_io = socketio)
+    # socketio.emit('update_progress', {'progress': 50})
 
     # Create nucleotide sequences
     status = "Generating nucleotide sequences"
-    o.generate_nt_sequences()
+    o.generate_nt_sequences(s_io = socketio)
+    # socketio.emit('update_progress', {'progress': 100})
 
     # Remove empty nucleotide sequences
     generated_nt_sequences = list(o.generated_nt_seq)
@@ -159,16 +173,11 @@ def parse_json_input(data):
     if data['aaRestrictedSequences']:
         data['aaRestrictedSequences'] = data['aaRestrictedSequences'].split('\n')
     else:
-        data['aaRestrictedSequences'] = []
-
-    # Parse nucleotide restricted sequences
-    if data['ntRestrictedSequences']:
-        data['ntRestrictedSequences'] = data['ntRestrictedSequences'].split('\n')
-    else:
-        data['ntRestrictedSequences'] = []        
+        data['aaRestrictedSequences'] = []     
 
     return data
     
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # app.run(debug=True)
+    socketio.run(app, debug=True)
