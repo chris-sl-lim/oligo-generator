@@ -298,7 +298,7 @@ def filter_codon_list(nt_seq, nt_change, nt_list):
 
 def generate_nt_sequences(aa_sequences, aa_num_changes, base_nt_seq,
                           nt_change_vec, fullyfree_vec, restriction_sites, 
-                          s_io = False):
+                          s_io=None):
 
     # Get the codon table for 'h_sapiens_9606"
     ct = pct.get_codons_table("h_sapiens_9606")
@@ -415,9 +415,10 @@ def generate_nt_sequences(aa_sequences, aa_num_changes, base_nt_seq,
                   len(aa_sequences))
             
             # Broadcast progress on SocketIO if provided.
-            if (s_io != False and (((idx+1) % 10 == 0)) or idx+1 == len(aa_sequences)):
-                progress = 50 + (((idx+1) / len(aa_sequences)) / 2 * 100)
-                s_io.emit('update_progress', {'progress': progress, 'current_state': idx+1, 'total': len(aa_sequences)})
+            if s_io is not None:
+                if ((idx+1) % 10 == 0) or (idx+1 == len(aa_sequences)):
+                    progress = 50 + (((idx+1) / len(aa_sequences)) / 2 * 100)
+                    s_io.emit('update_progress', {'progress': progress, 'current_state': idx+1, 'total': len(aa_sequences)})
 
         # Exited the while loop so store the sequence
         generated_nt.append(nt_seq)

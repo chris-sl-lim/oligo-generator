@@ -17,7 +17,7 @@ class oligo_generator:
         self.restriction_sites = []
         self.restricted_aa_sequences = []
 
-    def generate_aa_sequences(self, s_io = False):
+    def generate_aa_sequences(self, s_io=None):
 
         # Loop through how many changes we need
         for change in range(1, self.num_changes+1):
@@ -63,13 +63,13 @@ class oligo_generator:
                 generated_aa_changes
             
             # Broadcast progress on SocketIO if provided.
-            if s_io != False:
+            if s_io is not None:
                 progress = (change / self.num_changes) / 2 * 100
                 s_io.emit('update_progress', {'progress': progress, 'current_state': change, 'total': self.num_changes})
 
         return
 
-    def generate_nt_sequences(self, s_io = False):
+    def generate_nt_sequences(self, s_io=None):
 
         # Generate the nucleotide sequences
         self.generated_nt_seq, self.generated_nt_seq_change_attempts = \
