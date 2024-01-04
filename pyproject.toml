@@ -11,6 +11,8 @@ python = "^3.10"
 flask-socketio = "^5.3.6"
 python-codon-tables = "^0.1.12"
 flask = "3.0.0"
+gevent = "^23.9.1"
+sympy = "^1.12"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"

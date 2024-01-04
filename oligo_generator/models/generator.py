@@ -1,5 +1,6 @@
 import oligo_generator.utilities.helper_functions as ogu
 import itertools
+from sympy.utilities.iterables import multiset_permutations
 
 
 class oligo_generator:
@@ -28,7 +29,8 @@ class oligo_generator:
             # Get all combinations
             num_constant = len(self.base_aa_seq) - change
             change_list = ([True] * change) + ([False] * num_constant)
-            change_combos = list(set(itertools.permutations(change_list)))
+            # change_combos = list(set(itertools.permutations(change_list)))
+            change_combos = list(multiset_permutations(change_list))
 
             # Create a list to store indices to remove
             idxToRemove = []

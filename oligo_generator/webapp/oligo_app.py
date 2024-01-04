@@ -3,8 +3,9 @@ from flask_socketio import SocketIO
 import oligo_generator.models.generator as ogu
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins='*')
 status = None
+
 
 @app.route('/')
 def home():
@@ -180,4 +181,4 @@ def parse_json_input(data):
 
 if __name__ == '__main__':
     # app.run(debug=True)
-    socketio.run(app, debug=True)
+    socketio.run(app, port=8000, host='0.0.0.0', debug=True)
