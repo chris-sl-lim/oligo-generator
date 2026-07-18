@@ -1,15 +1,23 @@
-from flask import Flask, render_template, request, jsonify
+from pathlib import Path
+
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_socketio import SocketIO
 import oligo_generator.models.generator as ogu
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins='*')
 status = None
+IMAGE_DIR = Path(__file__).resolve().parents[2] / 'images'
 
 
 @app.route('/')
 def home():
     return render_template('index.html')
+
+
+@app.route('/images/<path:filename>')
+def image_asset(filename):
+    return send_from_directory(IMAGE_DIR, filename)
 
 
 @socketio.on('connect')
