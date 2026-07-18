@@ -140,6 +140,27 @@
                 line-height: 1.62;
             }
 
+            .hero-support {
+                position: relative;
+                z-index: 1;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 22px;
+                margin-top: 24px;
+            }
+
+            .hero-support .hero-subtitle {
+                margin: 0;
+            }
+
+            .hero-actions {
+                display: flex;
+                flex: 0 0 auto;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
             .section-card {
                 margin-top: 22px;
                 padding: 28px;
@@ -389,6 +410,11 @@
                     margin-left: 0;
                 }
 
+                .hero-support {
+                    align-items: flex-start;
+                    flex-direction: column;
+                }
+
                 .section-card {
                     padding: 20px;
                     border-radius: 24px;
@@ -411,7 +437,13 @@
                     <h1>Maxion Oligo Generator</h1>
                 </div>
             </div>
-            <p class="hero-subtitle">Design constrained oligo libraries from a base nucleotide sequence, with fixed positions, restricted motifs, and codon-aware nucleotide output.</p>
+            <div class="hero-support">
+                <p class="hero-subtitle">Design constrained oligo libraries from a base nucleotide sequence, with fixed positions, restricted motifs, and codon-aware nucleotide output.</p>
+                <div class="hero-actions">
+                    <button type="button" class="btn btn-secondary-soft" onclick="loadExampleInputs()">Load Example Inputs</button>
+                    <button type="button" class="btn btn-secondary-soft" onclick="clearAllInputs()">Clear Inputs</button>
+                </div>
+            </div>
         </section>
 
         <section class="section-card">
@@ -549,6 +581,51 @@
     </main>
 
     <script>           
+
+        function resetGeneratedState() {
+            var progressBar = document.getElementById("progress-bar");
+            progressBar.style.width = "0%";
+            progressBar.setAttribute("aria-valuenow", "0");
+            progressBar.innerHTML = "";
+            document.getElementById("progress-message").textContent = "";
+            document.getElementById("inputAminoAcidSequence").value = "";
+            document.getElementById("fixedNucleotideSequence").innerHTML = "Run Check Inputs to preview fixed nucleotide positions.";
+            document.getElementById("result-title").innerHTML = "Oligo library output:";
+            document.getElementById("result-container").innerHTML = "Sequences will appear here.";
+        }
+
+        function loadExampleInputs() {
+            document.getElementById("inputSequence").value = "AGAAGCTGCATTGATACCATC";
+            document.getElementById("numChanges").value = "2";
+            document.getElementById("aaFixedCodes").value = "C";
+            document.getElementById("ntFixedPositions").value = "1,2,7";
+            document.getElementById("aaFixedPositions").value = "3";
+            document.getElementById("aaRestrictedSequences").value = "RS\nDP";
+            document.querySelectorAll('#restrictionsTable tbody input[type="checkbox"]').forEach(function(checkbox) {
+                checkbox.checked = false;
+            });
+            [1, 2, 5].forEach(function(rowIndex) {
+                var checkbox = document.querySelector('#restrictionsTable tbody tr:nth-child(' + rowIndex + ') input[type="checkbox"]');
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+            resetGeneratedState();
+        }
+
+        function clearAllInputs() {
+            document.getElementById("inputSequence").value = "";
+            document.getElementById("numChanges").value = "1";
+            document.getElementById("aaFixedCodes").value = "";
+            document.getElementById("ntFixedPositions").value = "";
+            document.getElementById("aaFixedPositions").value = "";
+            document.getElementById("aaRestrictedSequences").value = "";
+            document.getElementById("aaRestrictedFile").value = "";
+            document.querySelectorAll('#restrictionsTable tbody input[type="checkbox"]').forEach(function(checkbox) {
+                checkbox.checked = false;
+            });
+            resetGeneratedState();
+        }
 
         function generateSequences() {
             // Reset progress bar
