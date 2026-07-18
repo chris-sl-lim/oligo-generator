@@ -628,78 +628,83 @@
         }
 
         function generateSequences() {
-            // Reset progress bar
-            $('#progress-bar').css('width', 0 + '%');
-            $('#progress-message').text('');
+            resetGeneratedState();
 
-            // Connect SocketIO
-            var socket = io.connect('http://' + document.domain + ':' + location.port);
+            var generateButton = document.getElementById("generateSequencesBtn");
+            var progressMessage = document.getElementById("progress-message");
+            generateButton.disabled = true;
+            progressMessage.innerHTML = 'Connecting to progress updates...';
 
-            // Set Socket functionality
-            socket.on('connect', function() {
-                console.log('Connected to server');
-                // socket.emit('start_task');
-            });
+            var requestStarted = false;
+            var socket = io.connect(window.location.origin);
 
-            // Set socket update function
             socket.on('update_progress', function(data) {
-
-                // Update progress bar
                 var progressValue = data.progress;
                 var currentState = data.current_state;
                 var total = data.total;
-
-                // Get the progress bar element
                 var progressBar = document.getElementById("progress-bar");
 
-                // Set progress message
-                var progressMessage = document.getElementById("progress-message");
                 if (progressValue < 50) {
                     progressMessage.innerHTML = 'Generating amino acid sequences with ' + currentState + ' changes.';
                 } else {
                     progressMessage.innerHTML = 'Generated nucleotide sequence ' + currentState + ' of ' + total;
-                }                                
+                }
 
-                // Update the width and aria-valuenow attributes
                 progressBar.style.width = progressValue + "%";
                 progressBar.setAttribute("aria-valuenow", progressValue);
                 progressBar.innerHTML = Math.round(progressValue) + "%";
+            });
 
-                if (progressValue >= 100) {
-                    // Close the connection after the task is complete
-                    socket.disconnect();
+            socket.on('connect', function() {
+                if (requestStarted) {
+                    return;
                 }
-            });     
+                requestStarted = true;
+                progressMessage.innerHTML = 'Progress connected. Starting generation...';
 
-            // Get the data out of the form
-            var baseNucleotideSequence = document.getElementById("inputSequence").value;
-            var numChanges = document.getElementById("numChanges").value;
-            var ntFixedPositions = document.getElementById("ntFixedPositions").value;
-            var aaFixedPositions = document.getElementById("aaFixedPositions").value;
-            var aaFixedCodes = document.getElementById("aaFixedCodes").value;
-            var aaRestrictedSequences = document.getElementById("aaRestrictedSequences").value;
-            // var ntRestrictedSequences = document.getElementById("ntRestrictedSequences").value;
+                var baseNucleotideSequence = document.getElementById("inputSequence").value;
+                var numChanges = document.getElementById("numChanges").value;
+                var ntFixedPositions = document.getElementById("ntFixedPositions").value;
+                var aaFixedPositions = document.getElementById("aaFixedPositions").value;
+                var aaFixedCodes = document.getElementById("aaFixedCodes").value;
+                var aaRestrictedSequences = document.getElementById("aaRestrictedSequences").value;
+                var ntRestrictedSequences = parseRestrictionSites();
 
-            // Return restriction sites
-            var ntRestrictedSequences = parseRestrictionSites();
-            
-            // Create a new request through AJAX
-            var xhr = new XMLHttpRequest();
-            xhr.open("POST", "/generateSequences", true);
-            xhr.setRequestHeader("Content-Type", "application/json");
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState == 4 && xhr.status == 200) {
-                    parseResult(xhr.responseText)
-                }
-            };
-            xhr.send(JSON.stringify({"inputSequence": baseNucleotideSequence, 
-                "numChanges": numChanges, 
-                "ntFixedPositions": ntFixedPositions,
-                "aaFixedPositions": aaFixedPositions,
-                "aaFixedCodes": aaFixedCodes,
-                "aaRestrictedSequences": aaRestrictedSequences,
-                "ntRestrictedSequences": ntRestrictedSequences
-            }));
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", "/generateSequences", true);
+                xhr.setRequestHeader("Content-Type", "application/json");
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState == 4) {
+                        generateButton.disabled = false;
+                        socket.disconnect();
+
+                        if (xhr.status == 200) {
+                            parseResult(xhr.responseText);
+                            var progressBar = document.getElementById("progress-bar");
+                            progressBar.style.width = "100%";
+                            progressBar.setAttribute("aria-valuenow", "100");
+                            progressBar.innerHTML = "100%";
+                            progressMessage.innerHTML = 'Generation complete.';
+                        } else {
+                            progressMessage.innerHTML = 'Generation failed. Check server logs for details.';
+                        }
+                    }
+                };
+                xhr.send(JSON.stringify({"inputSequence": baseNucleotideSequence,
+                    "numChanges": numChanges,
+                    "ntFixedPositions": ntFixedPositions,
+                    "aaFixedPositions": aaFixedPositions,
+                    "aaFixedCodes": aaFixedCodes,
+                    "aaRestrictedSequences": aaRestrictedSequences,
+                    "ntRestrictedSequences": ntRestrictedSequences
+                }));
+            });
+
+            socket.on('connect_error', function() {
+                generateButton.disabled = false;
+                progressMessage.innerHTML = 'Could not connect to progress updates. Please retry.';
+                socket.disconnect();
+            });
         }
 
         function checkInputs() {

@@ -1,5 +1,6 @@
 import oligo_generator.models.generator as og
 import python_codon_tables as pct
+import pytest
 from math import comb
 
 
@@ -213,3 +214,49 @@ def test_LongerSequenceWithMultipleFixedAminoAcidPositions():
         assert 1 <= sum(
             aa != base_aa for aa, base_aa in zip(seq, o.base_aa_seq)
         ) <= o.num_changes
+
+
+def test_GeneratorValidatesBaseSequence():
+
+    with pytest.raises(ValueError, match='divisible by three'):
+        og.oligo_generator('AG')
+
+    with pytest.raises(ValueError, match='invalid DNA bases'):
+        og.oligo_generator('AGX')
+
+
+def test_GeneratorValidatesChangeCountAndGenerationOrder():
+
+    with pytest.raises(TypeError, match='num_changes'):
+        og.oligo_generator('AGA', num_changes='1')
+
+    o = og.oligo_generator('AGA')
+    o.num_changes = 2
+    with pytest.raises(ValueError, match='cannot exceed'):
+        o.generate_aa_sequences()
+
+    o = og.oligo_generator('AGA')
+    with pytest.raises(ValueError, match='generate_aa_sequences'):
+        o.generate_nt_sequences()
+
+
+def test_GeneratorValidatesPositionsAndBooleanFlags():
+
+    o = og.oligo_generator('AGAAGC')
+
+    with pytest.raises(IndexError, match='1-based'):
+        o.set_aa_pos(0, False)
+
+    with pytest.raises(IndexError, match='out of range'):
+        o.set_nt_pos(99, False)
+
+    with pytest.raises(TypeError, match='boolean'):
+        o.set_nt_pos(1, 0)
+
+
+def test_RestrictionSitesAllowNonCodonLengthMotifs():
+
+    o = og.oligo_generator('AGAAGC')
+    o.restriction_sites = ['GCGGCCGC']
+
+    assert o.restriction_sites == ['GCGGCCGC']
