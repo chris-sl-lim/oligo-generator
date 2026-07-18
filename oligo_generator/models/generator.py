@@ -97,10 +97,22 @@ class oligo_generator:
         # Loop through the sequence
         for idx, aa in enumerate(self.base_aa_seq):
             if aa == value:
-                self.set_aa_pos(idx, False)
+                self._set_aa_index(idx, False)
 
 
-    def set_aa_pos(self, idx, value):
+    def _position_to_index(self, position, sequence_length, sequence_name):
+
+        idx = position - 1
+        if idx < 0 or idx >= sequence_length:
+            raise IndexError(
+                f'{sequence_name} position {position} is out of range. '
+                f'Use a 1-based position from 1 to {sequence_length}.'
+            )
+
+        return idx
+
+
+    def _set_aa_index(self, idx, value):
 
         # Create copy, change value, assign back
         aa_change_vec = self.change_aa_vector[:]
@@ -110,12 +122,30 @@ class oligo_generator:
         return
 
 
-    def set_nt_pos(self, idx, value):
+    def _set_nt_index(self, idx, value):
 
         # Create copy, change value, assign back
         nt_change_vec = self.change_nt_vector[:]
         nt_change_vec[idx] = value
         self.change_nt_vector = nt_change_vec[:]
+
+        return
+
+
+    def set_aa_pos(self, position, value):
+
+        idx = self._position_to_index(position, len(self.base_aa_seq),
+                                      'Amino acid')
+        self._set_aa_index(idx, value)
+
+        return
+
+
+    def set_nt_pos(self, position, value):
+
+        idx = self._position_to_index(position, len(self.base_nt_seq),
+                                      'Nucleotide')
+        self._set_nt_index(idx, value)
 
         return
 

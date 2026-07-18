@@ -12,10 +12,10 @@ print(o.base_aa_seq)
 print(o.base_nt_seq)
 
 # Fix certain position in the amino acid and nucleotide chains
-o.set_aa_pos(4, False)
 o.set_aa_pos(5, False)
-o.set_nt_pos(3, False)
-o.set_nt_pos(5, False)
+o.set_aa_pos(6, False)
+o.set_nt_pos(4, False)
+o.set_nt_pos(6, False)
 o.num_changes = 2
 
 # create new amino acid sequences

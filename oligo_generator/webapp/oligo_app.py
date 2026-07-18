@@ -146,8 +146,7 @@ def _parse_position_list(value):
     if not value:
         return []
 
-    # The UI uses biological 1-based positions; the model uses 0-based lists.
-    return [int(item.strip()) - 1 for item in value.split(',')
+    return [int(item.strip()) for item in value.split(',')
             if item.strip()]
 
 

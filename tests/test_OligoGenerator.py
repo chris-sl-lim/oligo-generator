@@ -11,7 +11,7 @@ def test_FixAminoAcidPosition():
 
     # Get the amino acid sequence and fix position 3
     aaSeq = o.base_aa_seq
-    pos = 2
+    pos = 3
     o.set_aa_pos(pos, False)
 
     # Generate two changes
@@ -24,7 +24,7 @@ def test_FixAminoAcidPosition():
 
     # Assert that the correct position is fixed
     for seq in o.generated_aa_seq:
-        assert seq[pos] == aaSeq[pos]
+        assert seq[pos - 1] == aaSeq[pos - 1]
 
 
 def test_OneChangeOneCodon():
@@ -183,3 +183,33 @@ def test_AminoAcidChoicesDoNotMutateAcrossPositions():
 
     assert 'DD' in o.generated_aa_seq
     assert 'AA' in o.generated_aa_seq
+
+
+def test_LongerSequenceWithMultipleFixedAminoAcidPositions():
+
+    base_seq = 'AGA' * 8
+    o = og.oligo_generator(base_seq)
+
+    fixed_positions = [2, 5, 8]
+    for position in fixed_positions:
+        o.set_aa_pos(position, False)
+
+    o.num_changes = 3
+    o.generate_aa_sequences()
+
+    substitutions_per_position = len(pct.get_codons_table("h_sapiens_9606")) - 4
+    mutable_positions = len(o.base_aa_seq) - len(fixed_positions)
+    expected_count = sum(
+        comb(mutable_positions, changes) * substitutions_per_position**changes
+        for changes in range(1, o.num_changes + 1)
+    )
+
+    assert len(o.generated_aa_seq) == expected_count
+    assert len(set(o.generated_aa_seq)) == len(o.generated_aa_seq)
+
+    fixed_indices = [position - 1 for position in fixed_positions]
+    for seq in o.generated_aa_seq:
+        assert all(seq[idx] == o.base_aa_seq[idx] for idx in fixed_indices)
+        assert 1 <= sum(
+            aa != base_aa for aa, base_aa in zip(seq, o.base_aa_seq)
+        ) <= o.num_changes

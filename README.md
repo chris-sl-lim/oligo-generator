@@ -12,7 +12,7 @@ A Flask application and Python library for generating oligo libraries from a bas
 - `example_oligo.py`: command-line example of using the generator class directly.
 - `startup.py`: app entry point for hosting environments.
 - `tests/`: pytest coverage for amino-acid and nucleotide generation behavior.
-- `pyproject.toml` and `poetry.lock`: Poetry project metadata and pinned dependency set.
+- `pyproject.toml` and `uv.lock`: uv project metadata and pinned dependency set.
 
 ## Features
 
@@ -27,32 +27,42 @@ A Flask application and Python library for generating oligo libraries from a bas
 ## Requirements
 
 - Python 3.10 or newer.
-- Poetry for dependency management.
+- `uv` for dependency management and command execution.
 
-The project dependencies are declared in `pyproject.toml`. Core runtime packages include Flask, Flask-SocketIO, gevent, SymPy, and python-codon-tables.
+The project dependencies are declared in `pyproject.toml` and pinned in `uv.lock`. Core runtime packages include Flask, Flask-SocketIO, gevent, SymPy, and python-codon-tables. Development tools such as pytest and flake8 are in the `dev` dependency group.
 
 ## Setup
 
-Install dependencies with Poetry:
+Install `uv` if it is not already available:
 
 ```bash
-poetry install --with dev
+python -m pip install uv
 ```
 
-If you only need runtime dependencies, omit `--with dev`.
+Create or update the local virtual environment from `uv.lock`:
+
+```bash
+uv sync --all-groups
+```
+
+For runtime dependencies only, omit the development group:
+
+```bash
+uv sync --no-dev
+```
 
 ## Run The Web App
 
 Start the Flask-SocketIO app:
 
 ```bash
-poetry run python startup.py
+uv run python startup.py
 ```
 
 For local development you can also run the app module directly:
 
 ```bash
-poetry run python oligo_generator/webapp/oligo_app.py
+uv run python oligo_generator/webapp/oligo_app.py
 ```
 
 The app listens on `0.0.0.0:8000` when run from `oligo_app.py`.
@@ -65,8 +75,8 @@ import oligo_generator.models.generator as og
 base_seq = "AGAAGCTGCATT"
 o = og.oligo_generator(base_nt_seq=base_seq, num_changes=2)
 
-o.set_aa_pos(2, False)      # Fix amino-acid position, using zero-based indexing.
-o.set_nt_pos(4, False)      # Fix nucleotide position, using zero-based indexing.
+o.set_aa_pos(3, False)      # Fix amino-acid position 3, using 1-based indexing.
+o.set_nt_pos(5, False)      # Fix nucleotide position 5, using 1-based indexing.
 o.set_fixed_aa("C")         # Keep every C in the base amino-acid sequence fixed.
 o.restriction_sites = ["GGATCC", "GGTCTC"]
 o.restricted_aa_sequences = ["RS"]
@@ -79,21 +89,47 @@ print(o.generated_aa_seq)
 print(o.generated_nt_seq)
 ```
 
-The web UI accepts biological 1-based positions and converts them internally to the generator's zero-based indexing.
+## Position Indexing
 
-## Tests
+All public position inputs are 1-based. This applies to both the web form and the Python API. For example, `set_aa_pos(1, False)` fixes the first amino acid and `set_nt_pos(1, False)` fixes the first nucleotide. Internally the implementation converts these values to Python list indices.
+
+## Tests And Checks
 
 Run the test suite with:
 
 ```bash
-poetry run pytest -q
+uv run pytest -q
 ```
 
-The tests cover amino-acid generation, nucleotide generation, fixed positions, fixed amino-acid codes, restricted amino-acid sequences, and regressions for amino-acid/nucleotide alignment.
+Run the same lint checks used by CI:
+
+```bash
+uv run flake8 ./oligo_generator/ --count --select=E9,F63,F7,F82 --show-source --statistics
+uv run flake8 ./oligo_generator/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+```
+
+The suite currently has 16 tests. Coverage includes amino-acid generation counts, nucleotide generation, fixed amino-acid and nucleotide positions, fixed amino-acid codes, restricted amino-acid sequences, longer sequences with multiple fixed positions, higher change counts, and regressions for amino-acid/nucleotide alignment.
+
+## Dependency Locking And Deployment
+
+Use `uv lock` after changing dependencies in `pyproject.toml`:
+
+```bash
+uv lock
+```
+
+The Azure deployment workflow exports runtime dependencies to `requirements.txt` with:
+
+```bash
+uv export --no-dev --no-emit-project --no-hashes --format requirements.txt --output-file requirements.txt
+```
+
+`poetry.lock` is no longer used; `uv.lock` is the source of pinned dependency versions.
 
 ## Notes And Limitations
 
 - Input nucleotide sequences should be uppercase DNA sequences whose length is divisible by three.
 - The generator currently uses the `h_sapiens_9606` codon table.
 - Generated substitutions intentionally exclude `*`, `C`, and `M`.
-- Direct Python API positions are zero-based. Web-form positions are one-based.
+- Public position inputs in both the Python API and web form are one-based.
+- Very large libraries can grow quickly because generated sequence count scales combinatorially with sequence length and number of changes.

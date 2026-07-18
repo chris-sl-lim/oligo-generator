@@ -11,8 +11,8 @@ def test_FixNucleotidePosition():
 
     # Get the amino acid sequence and fix position 3
     ntSeq = o.base_nt_seq
-    o.set_nt_pos(4, False)
-    o.set_nt_pos(7, False)
+    o.set_nt_pos(5, False)
+    o.set_nt_pos(8, False)
 
     # Generate two changes
     o.num_changes = 2
@@ -110,8 +110,8 @@ def test_NucleotideSequencesMatchDisplayedAminoAcidsAfterFiltering():
     base_seq = 'AAAAGACTG'
     o = og.oligo_generator(base_seq)
 
-    o.set_nt_pos(0, False)
     o.set_nt_pos(1, False)
+    o.set_nt_pos(2, False)
     o.num_changes = 1
 
     o.generate_aa_sequences()
@@ -120,3 +120,37 @@ def test_NucleotideSequencesMatchDisplayedAminoAcidsAfterFiltering():
     assert len(o.generated_nt_seq) == len(o.generated_aa_seq)
     for nt_seq, aa_seq in zip(o.generated_nt_seq, o.generated_aa_seq):
         assert helper.nt2aa(nt_seq) == aa_seq
+
+
+def test_LongerNucleotideGenerationWithMultipleFixedPositions():
+
+    base_seq = 'AGA' * 6
+    o = og.oligo_generator(base_seq)
+
+    fixed_aa_positions = [2, 5]
+    fixed_nt_positions = [1, 2, 7, 16, 17]
+
+    for position in fixed_aa_positions:
+        o.set_aa_pos(position, False)
+    for position in fixed_nt_positions:
+        o.set_nt_pos(position, False)
+
+    o.num_changes = 3
+    o.generate_aa_sequences()
+    o.generate_nt_sequences()
+
+    assert len(o.generated_nt_seq) > 0
+    assert len(o.generated_nt_seq) == len(o.generated_aa_seq)
+    assert len(set(o.generated_nt_seq)) == len(o.generated_nt_seq)
+
+    fixed_aa_indices = [position - 1 for position in fixed_aa_positions]
+    fixed_nt_indices = [position - 1 for position in fixed_nt_positions]
+
+    for nt_seq, aa_seq in zip(o.generated_nt_seq, o.generated_aa_seq):
+        assert len(nt_seq) == len(base_seq)
+        assert helper.nt2aa(nt_seq) == aa_seq
+        assert all(nt_seq[idx] == base_seq[idx] for idx in fixed_nt_indices)
+        assert all(aa_seq[idx] == o.base_aa_seq[idx] for idx in fixed_aa_indices)
+        assert 1 <= sum(
+            aa != base_aa for aa, base_aa in zip(aa_seq, o.base_aa_seq)
+        ) <= o.num_changes
