@@ -292,10 +292,6 @@ def generate_nt_sequences(aa_sequences, aa_num_changes, base_nt_seq,
             else:
                 nt_seq = ''
 
-        # Print message
-        print('Generated nucleotide sequence ', idx+1, ' of ',
-              len(aa_sequences))
-            
         # Broadcast progress on SocketIO if provided.
         if s_io is not None:
             if ((idx+1) % 10 == 0) or (idx+1 == len(aa_sequences)):
