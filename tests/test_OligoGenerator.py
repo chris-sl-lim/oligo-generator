@@ -170,3 +170,16 @@ def test_NucleotideToAminoAcid():
 
     # Assert that the result is correct
     assert o.base_aa_seq == "A*VHED"
+
+def test_AminoAcidChoicesDoNotMutateAcrossPositions():
+
+    # Define base seq with different amino acids so each changed position must
+    # get a fresh copy of the allowed amino acid library.
+    base_seq = 'GCTGAT'
+    o = og.oligo_generator(base_seq)
+
+    o.num_changes = 1
+    o.generate_aa_sequences()
+
+    assert 'DD' in o.generated_aa_seq
+    assert 'AA' in o.generated_aa_seq

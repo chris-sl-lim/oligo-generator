@@ -1,5 +1,6 @@
 import oligo_generator.models.generator as og
 import python_codon_tables as pct
+import oligo_generator.utilities.helper_functions as helper
 
 
 def test_FixNucleotidePosition():
@@ -100,3 +101,22 @@ def test_RestrictedAminoAcidSequence():
         assert('RS' not in seq)
 
 
+
+
+def test_NucleotideSequencesMatchDisplayedAminoAcidsAfterFiltering():
+
+    # Fixed nucleotide positions can make some amino-acid candidates impossible
+    # to encode. The remaining nucleotide and amino-acid rows must stay aligned.
+    base_seq = 'AAAAGACTG'
+    o = og.oligo_generator(base_seq)
+
+    o.set_nt_pos(0, False)
+    o.set_nt_pos(1, False)
+    o.num_changes = 1
+
+    o.generate_aa_sequences()
+    o.generate_nt_sequences()
+
+    assert len(o.generated_nt_seq) == len(o.generated_aa_seq)
+    for nt_seq, aa_seq in zip(o.generated_nt_seq, o.generated_aa_seq):
+        assert helper.nt2aa(nt_seq) == aa_seq

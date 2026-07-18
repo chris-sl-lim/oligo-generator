@@ -1,92 +1,99 @@
-# python-oligo-generator
+# Oligo Generator
 
+A Flask application and Python library for generating oligo libraries from a base nucleotide sequence. The generator translates the input nucleotide sequence to amino acids, creates amino-acid variants with a requested number of changes, then selects compatible nucleotide codons while respecting fixed positions and restricted sequence constraints.
 
+## What Is In This Repository
 
-## Getting started
+- `oligo_generator/models/generator.py`: main `oligo_generator` class used by scripts and the web app.
+- `oligo_generator/utilities/helper_functions.py`: nucleotide/amino-acid translation, variant generation, codon filtering, and restriction-site handling.
+- `oligo_generator/webapp/oligo_app.py`: Flask and Flask-SocketIO web application with `/`, `/checkInputs`, and `/generateSequences` routes.
+- `oligo_generator/webapp/templates/index.html`: browser UI for entering a base sequence, fixed positions, fixed amino-acid codes, restricted amino-acid sequences, and restriction sites.
+- `RestrictionSites.csv`: restriction enzyme site data used by the example workflow.
+- `example_oligo.py`: command-line example of using the generator class directly.
+- `startup.py`: app entry point for hosting environments.
+- `tests/`: pytest coverage for amino-acid and nucleotide generation behavior.
+- `pyproject.toml` and `poetry.lock`: Poetry project metadata and pinned dependency set.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Features
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+- Translates nucleotide sequences to amino-acid sequences using the human codon table from `python-codon-tables`.
+- Generates amino-acid variant libraries for one or more amino-acid changes.
+- Excludes stop codons, cysteine, methionine, and the original amino acid from generated substitutions.
+- Supports fixed amino-acid positions, fixed nucleotide positions, and fixed amino-acid codes.
+- Supports restricted amino-acid subsequences and restricted nucleotide sequences such as restriction sites.
+- Selects codons by codon usage order while preserving nucleotide-position constraints.
+- Provides a Flask UI with progress updates via SocketIO.
 
-## Add your files
+## Requirements
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+- Python 3.10 or newer.
+- Poetry for dependency management.
 
+The project dependencies are declared in `pyproject.toml`. Core runtime packages include Flask, Flask-SocketIO, gevent, SymPy, and python-codon-tables.
+
+## Setup
+
+Install dependencies with Poetry:
+
+```bash
+poetry install --with dev
 ```
-cd existing_repo
-git remote add origin https://insidelabs-git.mathworks.com/chrislim/python-oligo-generator.git
-git branch -M main
-git push -uf origin main
+
+If you only need runtime dependencies, omit `--with dev`.
+
+## Run The Web App
+
+Start the Flask-SocketIO app:
+
+```bash
+poetry run python startup.py
 ```
 
-## Integrate with your tools
+For local development you can also run the app module directly:
 
-- [ ] [Set up project integrations](https://insidelabs-git.mathworks.com/chrislim/python-oligo-generator/-/settings/integrations)
+```bash
+poetry run python oligo_generator/webapp/oligo_app.py
+```
 
-## Collaborate with your team
+The app listens on `0.0.0.0:8000` when run from `oligo_app.py`.
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+## Use The Python API
 
-## Test and Deploy
+```python
+import oligo_generator.models.generator as og
 
-Use the built-in continuous integration in GitLab.
+base_seq = "AGAAGCTGCATT"
+o = og.oligo_generator(base_nt_seq=base_seq, num_changes=2)
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+o.set_aa_pos(2, False)      # Fix amino-acid position, using zero-based indexing.
+o.set_nt_pos(4, False)      # Fix nucleotide position, using zero-based indexing.
+o.set_fixed_aa("C")         # Keep every C in the base amino-acid sequence fixed.
+o.restriction_sites = ["GGATCC", "GGTCTC"]
+o.restricted_aa_sequences = ["RS"]
 
-***
+o.generate_aa_sequences()
+o.generate_nt_sequences()
 
-# Editing this README
+print(o.base_aa_seq)
+print(o.generated_aa_seq)
+print(o.generated_nt_seq)
+```
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
+The web UI accepts biological 1-based positions and converts them internally to the generator's zero-based indexing.
 
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+## Tests
 
-## Name
-Choose a self-explaining name for your project.
+Run the test suite with:
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+```bash
+poetry run pytest -q
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+The tests cover amino-acid generation, nucleotide generation, fixed positions, fixed amino-acid codes, restricted amino-acid sequences, and regressions for amino-acid/nucleotide alignment.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## Notes And Limitations
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+- Input nucleotide sequences should be uppercase DNA sequences whose length is divisible by three.
+- The generator currently uses the `h_sapiens_9606` codon table.
+- Generated substitutions intentionally exclude `*`, `C`, and `M`.
+- Direct Python API positions are zero-based. Web-form positions are one-based.

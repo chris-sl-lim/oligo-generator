@@ -1,7 +1,7 @@
 import python_codon_tables as pct
 import fnmatch
 
-from itertools import combinations
+from itertools import combinations, product
 
 
 def nt2aa(seq):
@@ -98,94 +98,30 @@ def generate_aa_sequences(aa_seq, change_combos, restricted_aa_seq):
     if 'M' in available_aa:
         available_aa.remove('M')
 
-    # Create a new list for the generated sequences
-    generated_aa = list()
-    generated_aa_changes = list()
+    generated_aa = []
+    generated_aa_changes = []
+    restricted_aa_seq = [seq for seq in restricted_aa_seq if seq]
 
-    # For each combo
     for combo in change_combos:
+        aa_choices = []
 
-        # Create a list for the static chunks (e.g. bits of the sequence that
-        # do not change)
-        static_chunks = list()
-        chunk = ''
-
-        # Create a list for an amino acid library (e.g. what amino acids can
-        # be used at what position)
-        aa_lib = list()
-
-        # Build up a list of the static chunks
-        for idx, tf in enumerate(combo):
-
-            if tf is False:
-                chunk = chunk + aa_seq[idx]
-            elif tf is True:
-                # Append the chunk to the library and reset
-                static_chunks.append(chunk)
-                chunk = ''
-                # Take stock of what position we are at and remove the amino 
-                # acid that is already there
-                aa_to_use = available_aa
-                if aa_seq[idx] in aa_to_use:
-                    aa_to_use.remove(aa_seq[idx])
-                aa_lib.append(aa_to_use)
-
-        # Add the last chunk after the loop has finished
-        static_chunks.append(chunk)
-
-        # Create a list of roots
-        prev_seq_roots = list()
-
-        # Now create the sequences
-        for idx, chunk in enumerate(static_chunks):
-
-            # Append the latest chunk to all the generated sequence roots
-            # so far
-            if idx == 0:
-                prev_seq_roots.append(chunk)
+        for idx, should_change in enumerate(combo):
+            if should_change is True:
+                aa_choices.append([aa for aa in available_aa
+                                   if aa != aa_seq[idx]])
             else:
-                for idx1, seq_root in enumerate(prev_seq_roots):
-                    prev_seq_roots[idx1] = seq_root + chunk
+                aa_choices.append([aa_seq[idx]])
 
-            # If we're not at the last segment, then append the amino acids
-            # as well
-            if idx < (len(static_chunks)-1):
+        for candidate in product(*aa_choices):
+            candidate_seq = ''.join(candidate)
+            if any(restricted_seq in candidate_seq
+                   for restricted_seq in restricted_aa_seq):
+                continue
 
-                # Get the aa_lib
-                aa_to_use = aa_lib[idx]
-
-                # Create a new_seq_roots list
-                new_seq_roots = list()
-
-                # Append
-                for seq_root in prev_seq_roots:
-
-                    # Generate a new sequence root for each amino acid
-                    for aa in aa_to_use:
-                        new_seq_roots.append(seq_root + aa)
-
-                # Replace prev_seq_roots
-                prev_seq_roots = new_seq_roots
-
-            else:
-
-                # Now we're at the end - these are our sequences
-                generated_aa = generated_aa + prev_seq_roots
-                for ii in range(0, len(prev_seq_roots)):
-                    generated_aa_changes.append(list(combo))
-
-        # Now check for restricted amino acid sequences
-        idx_to_remove = []
-        for restricted_seq in restricted_aa_seq:
-            for idx, seq in enumerate(generated_aa):
-                if restricted_seq in seq:
-                    idx_to_remove.append(idx)
-
-        # Recreate list
-        generated_aa = [j for i, j in enumerate(generated_aa) if i not in idx_to_remove]
+            generated_aa.append(candidate_seq)
+            generated_aa_changes.append(list(combo))
 
     return generated_aa, generated_aa_changes
-
 
 def sync_nt_change_to_aa_change(nt_change_vec, aa_change_vec):
 
@@ -303,132 +239,75 @@ def generate_nt_sequences(aa_sequences, aa_num_changes, base_nt_seq,
     # Get the codon table for 'h_sapiens_9606"
     ct = pct.get_codons_table("h_sapiens_9606")
 
-    # Create list for generated nucleotide sequences
-    generated_nt = list()
-    generated_change_attempts = list()
+    generated_nt = []
+    generated_change_attempts = []
+    generated_aa_indices = []
+    restriction_sites = [site for site in restriction_sites if site]
 
     # We have to loop through each sequence
     for idx, aa_seq in enumerate(aa_sequences):
 
-        # Create a vector to track how many options we have tried in each
-        # position
+        codon_options = []
+        aa_change = aa_num_changes[idx]
+
+        for idx_pos, aa in enumerate(aa_seq):
+            if aa_change[idx_pos] is False:
+                codon_options.append(
+                    [base_nt_seq[(idx_pos*3):(idx_pos*3)+3]]
+                )
+                continue
+
+            ct_slice = sorted(ct[aa].items(), key=lambda item: item[1],
+                              reverse=True)
+
+            if fullyfree_vec[idx_pos] is True:
+                codon_options.append([item[0] for item in ct_slice])
+                continue
+
+            base_nt_chunk = base_nt_seq[(idx_pos*3):(idx_pos*3)+3]
+            nt_change_chunk = nt_change_vec[(idx_pos*3):(idx_pos*3)+3]
+            nt_list = [item[0] for item in ct_slice]
+            matchidx = filter_codon_list(base_nt_chunk, nt_change_chunk,
+                                         nt_list)
+            codon_options.append([nt_list[ii] for ii in matchidx])
+
+        nt_seq = ''
         aa_num_change_attempts = [0] * len(aa_seq)
 
-        # Set valid_seq flag
-        valid_seq = False
+        if all(codon_options):
+            indexed_options = [
+                list(enumerate(options)) for options in codon_options
+            ]
 
-        # Enter while loop
-        while valid_seq is False:
+            for candidate in product(*indexed_options):
+                nt_seq = ''.join(codon for _, codon in candidate)
 
-            # Create a blank nucleotide sequence
-            nt_seq = ''
+                if any(res_site in nt_seq for res_site in restriction_sites):
+                    continue
 
-            # Get the vector that describes what amino acids have changed
-            aa_change = aa_num_changes[idx]
+                aa_num_change_attempts = [
+                    option_idx for option_idx, _ in candidate
+                ]
+                break
+            else:
+                nt_seq = ''
 
-            # Now we have to through each aa in the sequence
-            for idx_pos, aa in enumerate(aa_seq):
-
-                if aa_change[idx_pos] is False:
-
-                    # If we have set the amino acid to stay the same - copy
-                    # the chunk of the base nt seq across
-                    nt_seq = nt_seq + base_nt_seq[(idx_pos*3):(idx_pos*3)+3]
-
-                elif aa_change[idx_pos] is True:
-
-                    # Get the bit of the codon table pertaining to that amino
-                    # acid and sort by probability
-                    ct_slice = sorted(ct[aa].items(), key=lambda item:
-                                      item[1], reverse=True)
-
-                    # If we have changed the amino acid -- are we fully free?
-                    if fullyfree_vec[idx_pos] is True:
-
-                        # Check whether we have gone through all the 
-                        # possibilities
-                        if aa_num_change_attempts[idx_pos] >= len(ct_slice):
-                            nt_seq = ''
-                            break
-
-                        # Insert the most prevalant nt translation of that aa
-                        # into the sequence
-                        nt_chunk = ct_slice[aa_num_change_attempts[idx_pos]][0]
-                        nt_seq = nt_seq + nt_chunk
-
-                        # Increment aa_num_changes vector
-                        aa_num_change_attempts[idx_pos] = \
-                            aa_num_change_attempts[idx_pos] + 1
-
-                    else:
-
-                        # If we are not fully free, get the base nt sequence
-                        base_nt_chunk = base_nt_seq[(idx_pos*3):(idx_pos*3)+3]
-
-                        # Get what we are able to change
-                        nt_change_chunk = \
-                            nt_change_vec[(idx_pos*3):(idx_pos*3)+3]
-
-                        # Get a side by side list
-                        nt_list = []
-                        for item in ct_slice:
-                            nt_list.append(item[0])
-
-                        # Filter the codon list
-                        matchidx = filter_codon_list(base_nt_chunk,
-                                                     nt_change_chunk, nt_list)
-
-                        # Get the subset of the list
-                        ct_subset = []
-                        for ii in matchidx:
-                            ct_subset.append(nt_list[ii])
-
-                        # Check whether we have gone through all the
-                        # possibilities
-                        if aa_num_change_attempts[idx_pos] >= len(ct_subset):
-                            nt_seq = ''
-                            break
-                        # Insert the most prevalant nt translation of that aa
-                        # into the sequence
-                        nt_chunk = ct_subset[aa_num_change_attempts[idx_pos]]
-                        nt_seq = nt_seq + nt_chunk
-                        # Increment aa_num_changes vector
-                        aa_num_change_attempts[idx_pos] = \
-                            aa_num_change_attempts[idx_pos] + 1
-
-            # Set valid_seq flag
-            valid_seq = True
-
-            # If we don't have any sequence, then bail out, can't find a
-            # solution so we don't need to look for restriction sites
-            if nt_seq != '':
-
-                # Now we need to check for restricton sites
-                for res_site in restriction_sites:
-
-                    # if restriction site exists in the sequence, set flag
-                    if res_site in nt_seq:
-                        valid_seq = False
-
-            # Print message
-            print('Generated nucleotide sequence ', idx+1, ' of ',
-                  len(aa_sequences))
+        # Print message
+        print('Generated nucleotide sequence ', idx+1, ' of ',
+              len(aa_sequences))
             
-            # Broadcast progress on SocketIO if provided.
-            if s_io is not None:
-                if ((idx+1) % 10 == 0) or (idx+1 == len(aa_sequences)):
-                    progress = 50 + (((idx+1) / len(aa_sequences)) / 2 * 100)
-                    s_io.emit('update_progress', {'progress': progress, 'current_state': idx+1, 'total': len(aa_sequences)})
+        # Broadcast progress on SocketIO if provided.
+        if s_io is not None:
+            if ((idx+1) % 10 == 0) or (idx+1 == len(aa_sequences)):
+                progress = 50 + (((idx+1) / len(aa_sequences)) / 2 * 100)
+                s_io.emit('update_progress', {'progress': progress,
+                                              'current_state': idx+1,
+                                              'total': len(aa_sequences)})
 
-        # Exited the while loop so store the sequence
-        generated_nt.append(nt_seq)
-        generated_change_attempts.append(aa_num_change_attempts)
-
-    # Remove empties from list
-    nonemptyidx = [generated_nt.index(x) for x in generated_nt if x != '']
-    generated_nt = [generated_nt[i] for i in nonemptyidx]
-    generated_change_attempts = [generated_change_attempts[i] for i in nonemptyidx]
-
+        if nt_seq:
+            generated_nt.append(nt_seq)
+            generated_change_attempts.append(aa_num_change_attempts)
+            generated_aa_indices.append(idx)
 
     # Gone through all the amino acid sequences
-    return generated_nt, generated_change_attempts
+    return generated_nt, generated_change_attempts, generated_aa_indices

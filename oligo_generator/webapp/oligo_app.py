@@ -134,47 +134,55 @@ def generate_sequences(o):
     o.generate_nt_sequences(s_io = socketio)
     # socketio.emit('update_progress', {'progress': 100})
 
-    # Remove empty nucleotide sequences
-    generated_nt_sequences = list(o.generated_nt_seq)
-    non_empty_indices = [i for i,x in enumerate(generated_nt_sequences) if x]
-    generated_aa_sequences = [list(o.generated_aa_seq)[idx] for idx in non_empty_indices]
-    changes = [o.generated_nt_seq_change_attempts[idx] for idx in non_empty_indices]
-
-    # Return the generated sequences
+    # Return the generated sequences. The model keeps these lists aligned when
+    # nucleotide candidates are filtered out.
     return {"base_amino_acid_sequence": o.base_aa_seq,
-            "nucleotide_sequences": generated_nt_sequences, 
-            "amino_acid_sequences": generated_aa_sequences, 
-            "changes": changes}
+            "nucleotide_sequences": list(o.generated_nt_seq),
+            "amino_acid_sequences": list(o.generated_aa_seq),
+            "changes": list(o.generated_nt_seq_change_attempts)}
+
+
+def _parse_position_list(value):
+    if not value:
+        return []
+
+    # The UI uses biological 1-based positions; the model uses 0-based lists.
+    return [int(item.strip()) - 1 for item in value.split(',')
+            if item.strip()]
+
+
+def _parse_sequence_list(value):
+    if not value:
+        return []
+
+    if isinstance(value, list):
+        values = value
+    else:
+        values = value.split('\n')
+
+    return [item.strip().upper() for item in values if item.strip()]
 
 
 def parse_json_input(data):
         
     # Convert NumChanges to an integer
     data['numChanges'] = int(data['numChanges'])
+    data['inputSequence'] = data['inputSequence'].strip().upper()
 
-    # Amino acid fixed positions (turn into integer list)
-    if data['aaFixedPositions']:
-        data['aaFixedPositions'] = [int(value) for value in data['aaFixedPositions'].split(',')]
-    else:
-        data['aaFixedPositions'] = []
-
-    # Nucleotide fixed positions (turn into integer list)
-    if data['ntFixedPositions']:
-        data['ntFixedPositions'] = [int(value) for value in data['ntFixedPositions'].split(',')]
-    else:
-        data['ntFixedPositions'] = []
+    # Amino acid and nucleotide fixed positions are entered as 1-based values.
+    data['aaFixedPositions'] = _parse_position_list(data['aaFixedPositions'])
+    data['ntFixedPositions'] = _parse_position_list(data['ntFixedPositions'])
 
     # Amino acid fixed codes (turn into list)
-    if data['aaFixedCodes']:
-        data['aaFixedCodes'] = data['aaFixedCodes'].split(',')
-    else:
-        data['aaFixedCodes'] = []
+    data['aaFixedCodes'] = _parse_sequence_list(data['aaFixedCodes'].replace(',', '\n'))
 
-    # Parse amino acid restricted sequences
-    if data['aaRestrictedSequences']:
-        data['aaRestrictedSequences'] = data['aaRestrictedSequences'].split('\n')
-    else:
-        data['aaRestrictedSequences'] = []     
+    # Parse restricted sequences
+    data['aaRestrictedSequences'] = _parse_sequence_list(
+        data['aaRestrictedSequences']
+    )
+    data['ntRestrictedSequences'] = _parse_sequence_list(
+        data['ntRestrictedSequences']
+    )
 
     return data
     
